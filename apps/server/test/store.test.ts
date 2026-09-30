@@ -97,7 +97,7 @@ describe("storyToMarkdown", () => {
       "melbourne",
     );
     expect(md).toContain("# Local Man Rides Bike");
-    expect(md).toContain("**MELBOURNE** — He rode.");
+    expect(md).toContain("**MELBOURNE:** He rode.");
     expect(md).toContain("## The Ride");
     expect(md).toContain('> "felt great"');
   });

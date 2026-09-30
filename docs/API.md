@@ -1,6 +1,6 @@
-# API (draft)
+# API
 
-> **Status:** draft for Phase 0. Request and response shapes live as zod schemas in `packages/shared` and are the source of truth once they exist.
+> **Status:** the Phase 0 and 1 routes are built. Everything from Phase 2 on is planned and may change. Request and response shapes live as zod schemas in `packages/shared`, which is the source of truth.
 
 All routes are under `/api`. JSON in and out, unless noted. Streaming uses Server-Sent Events.
 
@@ -8,7 +8,7 @@ All routes are under `/api`. JSON in and out, unless noted. Streaming uses Serve
 
 | Method | Route | Phase | Description |
 | --- | --- | --- | --- |
-| `GET` | `/api/health` | 0 | `{ ok, ollama: { up, models[] }, version }` |
+| `GET` | `/api/health` | 0 | `{ ok, ollama: { up, host, models[] }, version }` |
 
 ## Chat
 
@@ -28,7 +28,7 @@ event: done    data: {"agent":"reporter"}
 event: error   data: {"message":"Can't reach Ollama. Is it running?"}
 ```
 
-Print can take 10–60s with a 14b model (longer on the first call while the model loads).
+Print can take a while on a local model: about 10s once the model is loaded, and up to a minute or more on the first call while it loads.
 
 ## Entries
 

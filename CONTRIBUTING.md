@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping put out the paper! The project is early, so the process is light.
+The project is early, so the process is light.
 
 ## Where things live
 
@@ -30,11 +30,11 @@ docs: draft entry format
 
 ## Local setup
 
-> Filled in during Phase 0.
+See [Getting started](README.md#getting-started) in the README. Run the server tests with `bun test` in `apps/server`.
 
 ## Guidelines
 
-- **Files are the source of truth.** Never store anything only in SQLite that can't be rebuilt from `data/`.
-- **Never commit a real `data/` folder.** It's gitignored. Use `fixtures/` with made-up entries for tests and demos.
-- **Prompts live in `apps/server/src/prompts/`** as plain files, so they're easy to diff and tweak.
+- **Files are the source of truth.** Once SQLite is added (Phase 3), nothing should live only in SQLite that can't be rebuilt from `data/`.
+- **Never commit a real `data/` folder.** It's gitignored. Tests point `DATA_DIR` at a temp folder and use made-up entries.
+- **Prompts live in each agent's `agent.md`** (`apps/server/src/agents/<name>/`), so they're easy to diff and tweak.
 - **Validate LLM output.** Every structured LLM call goes through a zod schema, with a retry.

@@ -1,37 +1,40 @@
 # Architecture
 
-How The Daily You fits together. This describes the **planned** design and will change as the phases land. Keep it up to date when something changes.
+How The Daily You fits together. It covers what's built and what's planned, and planned parts are marked with the phase they belong to (see the [Roadmap](../ROADMAP.md)). Keep it up to date when something changes.
+
+## What's built so far
+
+Phase 1: the Reporter and Copy Desk agents, the agent engine and router, chat with streaming, printing to Markdown, version files on reprint, and a web app with chat, journal and entry pages. Everything runs on Ollama and is stored as plain files. There's no SQLite, memory, calendar, cloud models, PWA or auth yet.
 
 ## Big picture
 
 ```
- ┌──────────────────────────┐        HTTPS (Tailscale)
- │  Phone / Desktop browser │◄──────────────────────────┐
- │  React PWA (apps/web)    │                           │
- └────────────┬─────────────┘                           │
-              │ fetch + SSE (/api/*)                    │
- ┌────────────▼─────────────────────────────────────────┴───┐
- │  Bun + Hono server (apps/server)                          │
- │                                                            │
+ ┌──────────────────────────┐
+ │  Desktop browser         │   phone via Tailscale + PWA: Phase 5
+ │  React app (apps/web)    │
+ └────────────┬─────────────┘
+              │ fetch + SSE (/api/*)
+ ┌────────────▼─────────────────────────────────────────────┐
+ │  Bun + Hono server (apps/server), localhost only          │
+ │                                                           │
  │   ┌──────────────────┐                                    │
- │   │ Editor-in-Chief  │  routes each message by intent     │
+ │   │ Editor-in-Chief  │  picks an agent for chat messages  │
  │   └──┬──────┬─────┬──┘                                    │
- │      │      │     │                                        │
- │  ┌───▼───┐ ┌▼─────────┐ ┌▼──────────┐                      │
- │  │Reporter│ │The Morgue│ │ Copy Desk │                      │
- │  └───┬───┘ └────┬─────┘ └─────┬─────┘                      │
- │      │          │             │                             │
- │  ┌───▼──────────▼─────────────▼───┐   ┌────────────────┐   │
- │  │ LLM provider layer             │──►│ Ollama (local) │   │
- │  │ (Ollama | Claude | OpenAI)     │   │ or cloud API   │   │
- │  └────────────────────────────────┘   └────────────────┘   │
- │                                                            │
- │  Storage: data/ (Markdown + SQLite + sqlite-vec)           │
- │  Calendar: ICS fetcher                                     │
- └────────────────────────────────────────────────────────────┘
+ │      │      │     │                                       │
+ │  ┌───▼────┐ ┌▼──────────┐ ┌▼──────────┐                   │
+ │  │Reporter│ │The Morgue │ │ Copy Desk │                   │
+ │  └───┬────┘ │ (Phase 3) │ └─────┬─────┘                   │
+ │      │      └───────────┘       │                         │
+ │  ┌───▼──────────────────────────▼─┐   ┌────────────────┐  │
+ │  │ LLM layer (llm/ollama.ts)      │──►│ Ollama (local) │  │
+ │  └────────────────────────────────┘   └────────────────┘  │
+ │                                                           │
+ │  Storage: data/ (Markdown + JSON transcripts)             │
+ │  Planned: SQLite + sqlite-vec (Phase 3), ICS (Phase 4)    │
+ └───────────────────────────────────────────────────────────┘
 ```
 
-A single Bun process serves the API and, in production, the built frontend as static files. It runs on your own machine, and your phone reaches it through Tailscale.
+A single Bun process serves the API. Serving the built frontend from the same process is planned but not wired up yet; in dev, Vite serves the frontend and forwards `/api` to the server.
 
 ## Repo layout
 
@@ -42,22 +45,22 @@ the-daily-you/
 ├── apps/
 │   ├── web/                 # Frontend: React + Vite + Tailwind + shadcn
 │   │   └── src/
-│   │       ├── routes/      # chat, journal, entry, search, settings
+│   │       ├── pages/       # chat, journal, entry (search, settings later)
 │   │       ├── components/
 │   │       └── lib/api.ts   # typed client for the server
 │   └── server/              # Backend: Bun + Hono
 │       └── src/
 │           ├── index.ts     # Hono app, mounts routes
-│           ├── routes/      # chat, entries, search, memory, settings
+│           ├── routes/      # chat, entries (search, memory, settings later)
 │           ├── agents/      # one folder per agent (config only) + _engine/
-│           ├── tools/       # tools agents can use, by name
+│           ├── tools/       # tools agents can use, by name (empty for now)
 │           ├── schemas/     # structured outputs agents can return
 │           ├── newsroom/    # workflows that use agents (print)
-│           ├── llm/         # ollama client (claude/openai later)
-│           ├── store/       # entries (fs), db (sqlite), vectors
-│           └── calendar/    # ICS fetch + parse
+│           ├── llm/         # ollama client
+│           └── store/       # entries, sessions (transcripts), dates
 ├── packages/
 │   └── shared/              # zod schemas + TS types shared by web & server
+├── spikes/                  # throwaway experiments
 ├── data/                    # your diary (gitignored)
 └── docs/
 ```
@@ -66,7 +69,7 @@ the-daily-you/
 
 ## The agents
 
-Agents are **pure config**: a folder with a prompt and settings, and no code. It follows the same folder-per-agent pattern as my earlier project, hey-navi, with the code pulled out into shared folders:
+Agents are **pure config**: a folder with a prompt and settings, and no code. Agent code is pulled out into shared folders:
 
 ```
 apps/server/src/
@@ -102,16 +105,17 @@ The router is `_engine/router.ts`, not a folder, because it chooses between agen
 ### Reporter
 
 - Conversational interviewer. Streams replies.
-- Context it gets:
-  - today's date and time, plus today's calendar events (Phase 4)
+- Context it gets now: the date, weekday, time, your name (if set), and the current chat.
+- Planned context:
+  - today's calendar events (Phase 4)
   - the facts file (`memory.md`), trimmed to what's relevant (Phase 3)
-  - the last few entries' headlines and summaries
+  - recent entries' headlines (Phase 3)
   - a `recall` tool that queries The Morgue (Phase 3)
-- Aim: ask one good follow-up at a time, pick up on threads from past days ("Did the bike hold up?"), and know when there's enough for a story.
+- Aim: ask one good follow-up at a time, pick up on threads from past days ("Did the bike hold up?"), and know when there's enough for a story. Following up on past days needs The Morgue, so it can't do that yet.
 
-### The Morgue (memory)
+### The Morgue (memory, Phase 3, not built)
 
-Two kinds of memory:
+The plan is two kinds of memory:
 
 1. **Entries index:** each entry is split into chunks, embedded with an Ollama embedding model, and stored in `sqlite-vec`. Search combines vector similarity with SQLite FTS5 keyword search.
 2. **Facts file:** `data/memory.md`, a human-readable, human-editable list of people, projects and goals. After each print, an extraction step suggests additions or updates, which are merged into the file. Because it's plain Markdown, the user always has the final say.
@@ -136,35 +140,36 @@ Two-step generation, so the output stays reliable with small local models:
    ```
 2. **JSON → Markdown** with a plain template function (no LLM). This keeps formatting consistent and makes restyling easy.
 
+Planned for Phase 2:
+
 **Edits** ("change that bit"): the Copy Desk gets the current entry and the instruction and returns updated JSON. The previous version is saved first (see Versioning).
 
 **Appending** (second chat on the same day): the Copy Desk gets the existing entry and the new transcript and merges them into one story. It doesn't just tack on a second article.
 
 ## LLM provider layer
 
-A single interface so agents don't care what's behind it:
+The app isn't tied to a model or provider. Agents never name a model: a manifest says `model: reporter`, meaning "whatever the reporter role is set to". All LLM calls go through `apps/server/src/llm/`, which today has one provider:
 
-```ts
-interface LLM {
-  chat(opts: { model: string; messages: Msg[]; stream?: boolean; json?: ZodSchema }): ...
-  embed(opts: { model: string; input: string[] }): Promise<number[][]>
-}
-```
+- `chat()`: one complete reply, optionally with tools or constrained to a JSON schema
+- `chatStream()`: the reply token by token
+- `listModels()`: what's installed, for the health check
 
-Implementations: `OllamaLLM` (default), and later `AnthropicLLM` and `OpenAILLM`. Model names are chosen per role in settings:
+Today that's Ollama. Cloud providers (Claude, OpenAI) are planned as extra providers behind the same functions, so agents, prompts and workflows don't change.
 
-| Role | Needs | Default |
-| --- | --- | --- |
-| `router` | fast, good at JSON | `qwen2.5:14b` |
-| `reporter` | fast, conversational | `qwen2.5:14b` |
-| `copydesk` | quality writing, JSON | `qwen2.5:14b` |
-| `embed` | embeddings | `nomic-embed-text` |
+Models are chosen per role in `.env`:
 
-Start with one model for every role: Ollama keeps it loaded, so nothing gets swapped in and out. Each role is still its own setting, so if chat feels slow, point `router` or `reporter` at something smaller like `qwen2.5:7b` or `gemma3:4b`.
+| Role | Needs | Setting | Default |
+| --- | --- | --- | --- |
+| `router` | fast, good at following a strict format | `MODEL_ROUTER` | `qwen2.5:14b` |
+| `reporter` | fast, conversational | `MODEL_REPORTER` | `qwen2.5:14b` |
+| `copydesk` | good writing, reliable JSON | `MODEL_COPYDESK` | `qwen2.5:14b` |
+| `embed` | embeddings (Phase 3) | `MODEL_EMBED` | `nomic-embed-text` |
+
+The defaults use one local model for every role, because Ollama keeps a single model loaded and nothing gets swapped in and out. Point any role at a different model, smaller for speed or larger for quality, without touching code.
 
 ## Storage
 
-Plain files are the source of truth. SQLite is an **index** that can always be rebuilt from `data/`.
+Plain files are the source of truth. Right now there's nothing else: entries are Markdown, transcripts are JSON. When SQLite arrives in Phase 3, it'll be an **index** that can always be rebuilt from `data/`.
 
 ```
 data/
@@ -178,17 +183,19 @@ data/
 │       └── v2.md
 ├── transcripts/
 │   └── 2026-09-29/
-│       └── <session-id>.json       # raw chat, kept for re-printing/appending
+│       └── <session-id>.json       # raw chat, kept for re-printing
+│
+│   planned:
 ├── media/                          # photos (Phase 6)
-├── memory.md                       # facts file
-├── settings.json                   # models, calendars, masthead name, etc.
-└── daily-you.db                    # SQLite: metadata, FTS, sqlite-vec
+├── memory.md                       # facts file (Phase 3)
+├── settings.json                   # models, calendars, masthead name, etc. (Phase 2)
+└── daily-you.db                    # SQLite: metadata, FTS, sqlite-vec (Phase 3)
 ```
 
 - **Entry format:** see [ENTRY_FORMAT.md](ENTRY_FORMAT.md).
-- **SQLite tables (rough):** `entries` (date, issue, headline, mood, tags, updated_at, hash), `chunks` + `chunks_vec` (embeddings), `chunks_fts`, `sessions`, `events`.
-- **Reindex:** on startup, compare file hashes with `entries.hash` and reindex anything that changed. This means hand-editing an entry in a text editor just works.
-- **Versioning:** before any overwrite, copy the current file to `versions/<date>/vN.md`. Plain files are simple and inspectable. If `data/` is a git repo, that works too.
+- **SQLite tables (planned, rough):** `entries` (date, issue, headline, mood, tags, updated_at, hash), `chunks` + `chunks_vec` (embeddings), `chunks_fts`, `sessions`, `events`.
+- **Reindex (planned):** on startup, compare file hashes with `entries.hash` and reindex anything that changed. This means hand-editing an entry in a text editor just works.
+- **Versioning:** before any overwrite, the current file is copied to `versions/<date>/vN.md`. There's no UI or API for old versions yet (Phase 2).
 
 ## Main flows
 
@@ -227,7 +234,7 @@ Phase 1 reprints rewrite the whole entry from all of the day's chats. Merging in
 
 ## Principles
 
-- **Local-first:** works fully offline with Ollama, and your data is plain files you own.
-- **Files are truth:** SQLite can be deleted and rebuilt.
+- **Local-first:** works offline with Ollama, and your data is plain files you own.
+- **Files are truth:** once SQLite is added, it should be safe to delete and rebuild.
 - **Code before model:** use deterministic code wherever it works (button routing, Markdown templating), and save LLM calls for what needs them.
 - **Small-model friendly:** use structured JSON outputs with validation and retries, plus short focused prompts.

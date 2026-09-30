@@ -95,6 +95,28 @@ describe("sessions", () => {
   });
 });
 
+describe("settings", () => {
+  test("saved settings win over defaults, and a partial save keeps the rest", async () => {
+    const { config } = await import("../src/config");
+    const { currentSettings, updateSettings } = await import("../src/store/settings");
+    const before = currentSettings();
+
+    await updateSettings({ name: "Tom", paperName: "The Tom Times", models: { reporter: "qwen2.5:7b" } });
+    expect(config.userName).toBe("Tom");
+    expect(config.paperName).toBe("The Tom Times");
+    expect(config.models.reporter).toBe("qwen2.5:7b");
+    expect(config.models.copydesk).toBe(before.models.copydesk);
+
+    const after = await updateSettings({ dateline: "MELBOURNE", models: { copydesk: "llama3.1:8b" } });
+    expect(after.name).toBe("Tom");
+    expect(after.models).toEqual({ ...before.models, reporter: "qwen2.5:7b", copydesk: "llama3.1:8b" });
+    expect(config.dateline).toBe("MELBOURNE");
+
+    await rm(join(dataDir, "settings.json"));
+    expect(currentSettings()).toEqual(before);
+  });
+});
+
 describe("storyToMarkdown", () => {
   test("lays out headline, dateline, sections and quote", () => {
     const md = storyToMarkdown(

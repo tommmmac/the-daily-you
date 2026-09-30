@@ -8,6 +8,8 @@ import type {
   Health,
   PrintResult,
   Session,
+  Settings,
+  SettingsPatch,
 } from "@daily-you/shared";
 
 export class ApiRequestError extends Error {
@@ -84,4 +86,7 @@ export const api = {
     post<ChangeResult>(`${day(date)}/pages/${page}/edit`, { instruction }),
   deletePage: (date: string, page: number) => del<ChangeResult>(`${day(date)}/pages/${page}`),
   restoreVersion: (date: string, version: number) => post<Entry>(`${day(date)}/versions/${version}/restore`, {}),
+  getSettings: () => request<Settings>("/settings"),
+  updateSettings: (patch: SettingsPatch) =>
+    request<Settings>("/settings", { method: "PATCH", body: JSON.stringify(patch) }),
 };

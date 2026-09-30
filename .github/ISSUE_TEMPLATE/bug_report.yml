@@ -1,0 +1,28 @@
+name: Bug report
+description: Something isn't working
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Chat
+        2. ...
+  - type: input
+    id: model
+    attributes:
+      label: Ollama model
+      placeholder: qwen2.5:14b
+  - type: input
+    id: os
+    attributes:
+      label: OS / browser
+      placeholder: Windows 11, Chrome

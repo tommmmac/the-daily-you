@@ -1,8 +1,12 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import type { Health } from "@daily-you/shared";
+import { AGENTS } from "./agents/_engine/registry";
 import { config } from "./config";
 import { listModels } from "./llm/ollama";
+import { chatRoutes } from "./routes/chat";
+import { entryRoutes } from "./routes/entries";
+import { apiError } from "./routes/errors";
 import { ensureDataDir } from "./store/data-dir";
 import pkg from "../package.json";
 
@@ -21,13 +25,23 @@ app.get("/health", async (c) => {
   return c.json(body);
 });
 
-app.notFound((c) => c.json({ error: { code: "not_found", message: `No route ${c.req.path}` } }, 404));
+app.route("/", chatRoutes);
+app.route("/", entryRoutes);
+
+app.notFound((c) => apiError(c, 404, "not_found", `No route ${c.req.path}`));
+app.onError((err, c) => {
+  console.error(err);
+  return apiError(c, 500, "invalid_request", "Internal server error");
+});
 
 console.log(`The Daily You server on http://${config.hostname}:${config.port}`);
 console.log(`Data folder: ${config.dataDir}`);
+console.log(`Agents: ${Object.values(AGENTS).map((a) => `${a.name}${a.routable ? "" : " (button only)"}`).join(", ")}`);
 
 export default {
   port: config.port,
   hostname: config.hostname,
   fetch: app.fetch,
+  // Printing with a 14b model can take a while.
+  idleTimeout: 255,
 };

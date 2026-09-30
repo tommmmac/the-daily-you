@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun --filter \"./apps/*\" dev",
     "build": "bun --filter \"./apps/*\" build",
-    "typecheck": "bun --filter \"*\" typecheck"
+    "typecheck": "bun --filter \"*\" typecheck",
+    "test": "bun --filter \"./apps/server\" test"
   }
 }

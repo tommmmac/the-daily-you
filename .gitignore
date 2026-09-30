@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+build/
+dev-dist/
+*.tsbuildinfo
+
+# your diary: never commit
+data/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# sqlite
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/

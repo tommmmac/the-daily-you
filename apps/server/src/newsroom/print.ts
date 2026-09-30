@@ -22,7 +22,7 @@ function formatTranscripts(sessions: Session[]): string {
 export function storyToMarkdown(story: Story, dateline: string): string {
   const sections = story.sections.map((s) => `## ${s.heading}\n\n${s.body}`).join("\n\n");
   const quote = story.pull_quote ? `\n\n> "${story.pull_quote.replace(/^"|"$/g, "")}"` : "";
-  return `# ${story.headline}\n\n*${story.subhead}*\n\n**${dateline.toUpperCase()}** — ${story.lede}\n\n${sections}${quote}\n`;
+  return `# ${story.headline}\n\n*${story.subhead}*\n\n**${dateline.toUpperCase()}:** ${story.lede}\n\n${sections}${quote}\n`;
 }
 
 /**

@@ -49,7 +49,7 @@ tags: [cycling, uni]
 
 *Three weeks of excuses come to an end*
 
-**MELBOURNE** — After three weeks of a flat tyre and mounting excuses, ...
+**MELBOURNE:** After three weeks of a flat tyre and mounting excuses, ...
 ```
 
 The full list of fields is in [docs/ENTRY_FORMAT.md](docs/ENTRY_FORMAT.md).

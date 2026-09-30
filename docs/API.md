@@ -14,22 +14,21 @@ All routes are under `/api`. JSON in and out, unless noted. Streaming uses Serve
 
 | Method | Route | Phase | Description |
 | --- | --- | --- | --- |
-| `POST` | `/api/sessions` | 1 | Start a chat session. `{ date? }` → `{ sessionId, date }` |
+| `POST` | `/api/sessions` | 1 | Start a chat session. `{ date? }` → the `Session` (`id`, `date`, `created`, `messages`). The date defaults to today's diary date. |
 | `GET` | `/api/sessions/:id` | 1 | Session transcript. |
-| `POST` | `/api/chat` | 1 | `{ sessionId, message, action? }` → **SSE** stream (see below). |
-| `POST` | `/api/print` | 1 | `{ sessionId }` → `{ date, headline, version }`. Writes or merges the day's entry. |
-
-`action` is set by buttons and bypasses the router: `"print" | "edit_entry" | "recall"`.
+| `POST` | `/api/chat` | 1 | `{ sessionId, message? }` → **SSE** stream (see below). Leave out `message` to have the Reporter open the interview. |
+| `POST` | `/api/print` | 1 | `{ sessionId }` → `{ date, headline, version }`. Writes the day's entry from every chat that day. |
 
 SSE events from `/api/chat`:
 
 ```
-event: route   data: {"agent":"reporter","intent":"chat"}
+event: route   data: {"agent":"reporter"}
 event: token   data: {"text":"How"}
-event: tool    data: {"name":"recall","query":"climbing"}      (Phase 3)
-event: done    data: {"messageId":"..."}
-event: error   data: {"message":"..."}
+event: done    data: {"agent":"reporter"}
+event: error   data: {"message":"Can't reach Ollama. Is it running?"}
 ```
+
+Print can take 10–60s with a 14b model (longer on the first call while the model loads).
 
 ## Entries
 

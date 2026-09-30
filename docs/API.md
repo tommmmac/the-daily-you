@@ -1,6 +1,6 @@
 # API
 
-> **Status:** the Phase 0 and 1 routes are built. Everything from Phase 2 on is planned and may change. Request and response shapes live as zod schemas in `packages/shared`, which is the source of truth.
+> **Status:** the Phase 0 and 1 routes and the Phase 2 entry routes are built. Anything marked *planned* may change. Request and response shapes live as zod schemas in `packages/shared`, which is the source of truth.
 
 All routes are under `/api`. JSON in and out, unless noted. Streaming uses Server-Sent Events.
 
@@ -17,7 +17,7 @@ All routes are under `/api`. JSON in and out, unless noted. Streaming uses Serve
 | `POST` | `/api/sessions` | 1 | Start a chat session. `{ date? }` → the `Session` (`id`, `date`, `created`, `messages`). The date defaults to today's diary date. |
 | `GET` | `/api/sessions/:id` | 1 | Session transcript. |
 | `POST` | `/api/chat` | 1 | `{ sessionId, message? }` → **SSE** stream (see below). Leave out `message` to have the Reporter open the interview. |
-| `POST` | `/api/print` | 1 | `{ sessionId }` → `{ date, headline, version }`. Writes the day's entry from every chat that day. |
+| `POST` | `/api/print` | 1 | `{ sessionId }` → `{ date, headline, version, page }`. Prints the chat onto its day's entry: page 1 if nothing's printed yet, its own page again if it's already a page, otherwise a new page at the end. `headline` is that page's. |
 
 SSE events from `/api/chat`:
 
@@ -36,11 +36,15 @@ Print can take a while on a local model: about 10s once the model is loaded, and
 | --- | --- | --- | --- |
 | `GET` | `/api/entries?from=&to=` | 1 | List: `[{ date, issue, headline, mood, tags }]`, newest first. |
 | `GET` | `/api/entries/:date` | 1 | `{ frontmatter, markdown }` |
-| `PUT` | `/api/entries/:date` | 2 | Save a manual edit (full Markdown). Creates a new version. |
-| `POST` | `/api/entries/:date/edit` | 2 | `{ instruction }`: the Copy Desk edits the entry. Returns the new version. |
-| `GET` | `/api/entries/:date/versions` | 2 | `[{ version, updated }]` |
-| `GET` | `/api/entries/:date/versions/:v` | 2 | A specific old version. |
-| `POST` | `/api/entries/:date/versions/:v/restore` | 2 | Restore an old version (as a new version). |
+| `DELETE` | `/api/entries/:date` | 2 | Delete the day. → `ChangeResult` |
+| `POST` | `/api/entries/:date/pages/:page/edit` | 2 | `{ instruction }`: the Copy Desk rewrites that page (from 1). → `ChangeResult` |
+| `DELETE` | `/api/entries/:date/pages/:page` | 2 | Delete one page. Deleting the only page deletes the entry. → `ChangeResult` |
+| `GET` | `/api/entries/:date/versions` | 2 | `[{ version, updated }]`, newest first. |
+| `POST` | `/api/entries/:date/versions/:v/restore` | 2 | Restore an old version as a new version (works after a delete too). → the entry |
+| `PUT` | `/api/entries/:date` | planned | Save a manual edit (full Markdown). Creates a new version. |
+| `GET` | `/api/entries/:date/versions/:v` | planned | A specific old version. |
+
+`ChangeResult` is `{ date, page, headline?, deleted, undo }`. `undo` is the version to restore to undo the change, and `deleted` is true when the whole entry is gone. Every change saves the old file to `data/versions/<date>/` first.
 
 ## The Morgue
 

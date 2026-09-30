@@ -81,6 +81,6 @@ Every agent in a session reads and writes the same transcript, so switching desk
 | Agent | Routable | What it does |
 | --- | --- | --- |
 | [`reporter`](reporter/) | yes (default) | Interviews you about your day |
-| [`copydesk`](copydesk/) | no (Go to print button) | Turns the day's chats into a `story` |
+| [`copydesk`](copydesk/) | no (Go to print and Edit buttons) | Turns a chat into a page, and rewrites a page when you ask |
 
 The Morgue (with a `recall` tool) arrives in Phase 3.

@@ -4,12 +4,13 @@
  *
  * Before any overwrite, the old file is copied to data/versions/<date>/v<N>.md.
  */
-import { mkdir, readdir, copyFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { EntryFrontmatter, type Entry, type EntrySummary } from "@daily-you/shared";
+import { EntryFrontmatter, type Entry, type EntrySummary, type VersionSummary } from "@daily-you/shared";
 import { config } from "../config";
 
 const entriesDir = () => join(config.dataDir, "entries");
+const versionsDir = (date: string) => join(config.dataDir, "versions", date);
 
 export function entryPath(date: string): string {
   const [y, m] = date.split("-");
@@ -41,16 +42,65 @@ export async function readEntry(date: string): Promise<Entry | null> {
   return parseEntry(await file.text());
 }
 
+/** Copy the current file for a date into versions/, if there is one. */
+async function saveVersion(date: string): Promise<Entry | null> {
+  const existing = await readEntry(date);
+  if (existing) {
+    await mkdir(versionsDir(date), { recursive: true });
+    await copyFile(entryPath(date), join(versionsDir(date), `v${existing.frontmatter.version}.md`));
+  }
+  return existing;
+}
+
 /** Write an entry, saving the previous version first if one exists. */
 export async function writeEntry(entry: Entry): Promise<void> {
-  const path = entryPath(entry.frontmatter.date);
-  const existing = await readEntry(entry.frontmatter.date);
-  if (existing) {
-    const versionsDir = join(config.dataDir, "versions", entry.frontmatter.date);
-    await mkdir(versionsDir, { recursive: true });
-    await copyFile(path, join(versionsDir, `v${existing.frontmatter.version}.md`));
+  await saveVersion(entry.frontmatter.date);
+  await Bun.write(entryPath(entry.frontmatter.date), serializeEntry(entry));
+}
+
+/** Delete an entry. The file is kept in versions/, so it can be restored. Returns false if there was none. */
+export async function deleteEntry(date: string): Promise<boolean> {
+  const existing = await saveVersion(date);
+  if (existing) await rm(entryPath(date));
+  return !!existing;
+}
+
+/** Saved old versions of a day's entry, newest first. */
+export async function listVersions(date: string): Promise<VersionSummary[]> {
+  let files: string[];
+  try {
+    files = await readdir(versionsDir(date));
+  } catch {
+    return [];
   }
-  await Bun.write(path, serializeEntry(entry));
+  const versions: VersionSummary[] = [];
+  for (const f of files) {
+    const v = /^v(\d+)\.md$/.exec(f)?.[1];
+    if (!v) continue;
+    const entry = await readVersion(date, Number(v)).catch(() => null);
+    if (entry) versions.push({ version: Number(v), updated: entry.frontmatter.updated });
+  }
+  return versions.sort((a, b) => b.version - a.version);
+}
+
+export async function readVersion(date: string, version: number): Promise<Entry | null> {
+  const file = Bun.file(join(versionsDir(date), `v${version}.md`));
+  if (!(await file.exists())) return null;
+  return parseEntry(await file.text());
+}
+
+/**
+ * Bring back an old version as a new version (so the restore can be undone too).
+ * Works after the entry was deleted as well. Returns null if that version doesn't exist.
+ */
+export async function restoreVersion(date: string, version: number): Promise<Entry | null> {
+  const old = await readVersion(date, version);
+  if (!old) return null;
+  const current = await readEntry(date);
+  const latest = Math.max(current?.frontmatter.version ?? 0, ...(await listVersions(date)).map((v) => v.version));
+  const entry: Entry = { ...old, frontmatter: { ...old.frontmatter, version: latest + 1 } };
+  await writeEntry(entry);
+  return entry;
 }
 
 /** Every entry date on disk, newest first. */

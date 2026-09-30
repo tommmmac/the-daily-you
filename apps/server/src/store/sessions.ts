@@ -45,6 +45,17 @@ export async function addMessage(session: Session, msg: Msg, agent?: string): Pr
   await save(session);
 }
 
+/** Mark sessions as dropped (their page was deleted) or not. Unknown ids are skipped. */
+export async function setDropped(ids: string[], dropped: boolean): Promise<void> {
+  for (const id of ids) {
+    const session = await getSession(id);
+    if (!session) continue;
+    if (dropped) session.dropped = true;
+    else delete session.dropped;
+    await save(session);
+  }
+}
+
 /** All sessions for a day, oldest first. */
 export async function sessionsForDate(date: string): Promise<Session[]> {
   let files: string[];

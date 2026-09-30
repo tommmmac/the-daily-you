@@ -7,6 +7,7 @@
     "dev": "bun --filter \"./apps/*\" dev",
     "build": "bun --filter \"./apps/*\" build",
     "typecheck": "bun --filter \"*\" typecheck",
-    "test": "bun --filter \"./apps/server\" test"
+    "test": "bun --filter \"./apps/server\" test",
+    "wipe": "bun --env-file=.env apps/server/scripts/wipe.ts"
   }
 }

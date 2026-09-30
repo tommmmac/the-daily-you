@@ -1,5 +1,14 @@
 // Typed client for the Bun server. Shapes come from @daily-you/shared.
-import type { ApiError, ChatEvent, Entry, EntrySummary, Health, PrintResult, Session } from "@daily-you/shared";
+import type {
+  ApiError,
+  ChangeResult,
+  ChatEvent,
+  Entry,
+  EntrySummary,
+  Health,
+  PrintResult,
+  Session,
+} from "@daily-you/shared";
 
 export class ApiRequestError extends Error {
   constructor(
@@ -24,6 +33,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 const post = <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(body) });
+const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
+const day = (date: string) => `/entries/${encodeURIComponent(date)}`;
 
 /**
  * POST /api/chat, yielding each SSE event as it arrives.
@@ -67,5 +78,10 @@ export const api = {
   chat,
   print: (sessionId: string) => post<PrintResult>("/print", { sessionId }),
   listEntries: () => request<EntrySummary[]>("/entries"),
-  getEntry: (date: string) => request<Entry>(`/entries/${encodeURIComponent(date)}`),
+  getEntry: (date: string) => request<Entry>(day(date)),
+  deleteEntry: (date: string) => del<ChangeResult>(day(date)),
+  editPage: (date: string, page: number, instruction: string) =>
+    post<ChangeResult>(`${day(date)}/pages/${page}/edit`, { instruction }),
+  deletePage: (date: string, page: number) => del<ChangeResult>(`${day(date)}/pages/${page}`),
+  restoreVersion: (date: string, version: number) => post<Entry>(`${day(date)}/versions/${version}/restore`, {}),
 };

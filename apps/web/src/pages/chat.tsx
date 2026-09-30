@@ -49,6 +49,8 @@ export function ChatPage() {
   const [input, setInput] = useState("");
   const [printing, setPrinting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Whether this day already has an entry: printing then adds a page instead of the front page.
+  const [printed, setPrinted] = useState(false);
   const started = useRef(false);
   const bottom = useRef<HTMLDivElement>(null);
 
@@ -82,6 +84,10 @@ export function ChatPage() {
       const s = await loadSession();
       setSession(s);
       setMessages(s.messages.map(({ role, content }) => ({ role, content })));
+      api.getEntry(s.date).then(
+        () => setPrinted(true),
+        () => setPrinted(false),
+      );
       // A brand new session: the Reporter opens the interview.
       if (s.messages.length === 0) await stream(s.id);
     } catch (e) {
@@ -163,7 +169,7 @@ export function ChatPage() {
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}{" "}
           {!session && (
-            <button className="underline" onClick={() => void start()}>
+            <button className="font-medium underline hover:no-underline" onClick={() => void start()}>
               Try again
             </button>
           )}
@@ -187,7 +193,7 @@ export function ChatPage() {
           </Button>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={goToPrint} disabled={busy || !hasUserMessage}>
-              {printing ? "Printing…" : "Go to print"}
+              {printing ? "Printing…" : printed ? "Add a page" : "Go to print"}
             </Button>
             <Button type="submit" disabled={busy || !input.trim()}>
               Send

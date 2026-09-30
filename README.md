@@ -9,7 +9,7 @@
 
 Your entries are plain Markdown files on your own machine. The AI runs locally through [Ollama](https://ollama.com) by default, and you can add a Claude or OpenAI key if you want.
 
-> **Status:** early development. The app starts, but you can't journal in it yet. See the [Roadmap](ROADMAP.md).
+> **Status:** early development. The first edition works: chat about your day, go to print, and read it back. See the [Roadmap](ROADMAP.md).
 
 ---
 

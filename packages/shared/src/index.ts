@@ -58,6 +58,44 @@ export const EntrySummary = EntryFrontmatter.pick({
 });
 export type EntrySummary = z.infer<typeof EntrySummary>;
 
+/** A chat session: one conversation, saved to data/transcripts/<date>/<id>.json */
+export const Session = z.object({
+  id: z.string(),
+  date: DateStr,
+  created: z.string(),
+  messages: z.array(Msg.extend({ agent: z.string().optional(), at: z.string().optional() })),
+});
+export type Session = z.infer<typeof Session>;
+
+/** POST /api/sessions */
+export const CreateSessionRequest = z.object({ date: DateStr.optional() });
+export type CreateSessionRequest = z.infer<typeof CreateSessionRequest>;
+
+/** POST /api/chat. Omit `message` to have the Reporter open the interview. */
+export const ChatRequest = z.object({
+  sessionId: z.string(),
+  message: z.string().min(1).optional(),
+});
+export type ChatRequest = z.infer<typeof ChatRequest>;
+
+/** SSE events streamed from POST /api/chat */
+export type ChatEvent =
+  | { event: "route"; data: { agent: string } }
+  | { event: "token"; data: { text: string } }
+  | { event: "done"; data: { agent: string } }
+  | { event: "error"; data: { message: string } };
+
+/** POST /api/print */
+export const PrintRequest = z.object({ sessionId: z.string() });
+export type PrintRequest = z.infer<typeof PrintRequest>;
+
+export const PrintResult = z.object({
+  date: DateStr,
+  headline: z.string(),
+  version: z.number().int(),
+});
+export type PrintResult = z.infer<typeof PrintResult>;
+
 /** GET /api/health */
 export const Health = z.object({
   ok: z.boolean(),

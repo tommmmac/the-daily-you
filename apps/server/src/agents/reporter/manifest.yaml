@@ -1,0 +1,7 @@
+# Shown to the router so it knows when to hand a message to this agent.
+name: reporter
+description: Interviews the diarist about their day. Handles normal conversation, telling stories, feelings, and anything that doesn't clearly belong to another desk.
+enabled: true
+routable: true
+model: reporter
+tools: [] # Phase 3: recall, Phase 4: todays_events

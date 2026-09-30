@@ -5,76 +5,87 @@
 
 > *All the news that's fit to journal.*
 
-**The Daily You** is an open source, local-first AI diary. You chat about your day, and it gets printed as a neatly formatted, news-style Markdown entry for that date: a headline, a lede, and the story of your day.
+The Daily You is a local AI diary. You chat about your day, then hit "Go to print" and it writes up the chat as a newspaper-style Markdown entry for that date, with a headline and a short write-up.
 
-Your entries are plain Markdown files on your own machine. The AI runs locally through [Ollama](https://ollama.com) by default, and you can add a Claude or OpenAI key if you want.
+Entries are plain Markdown files on your machine, and the model runs locally through [Ollama](https://ollama.com).
 
-> **Status:** early development. The first edition works: chat about your day, go to print, and read it back. See the [Roadmap](ROADMAP.md).
+> **Status:** early and rough. The basic loop works: chat about your day, print it, read it back. Most of the interesting parts (memory, calendar, editing entries) aren't built yet. See the [Roadmap](ROADMAP.md).
 
 ## Why
 
-I'm building this to learn how agent systems and memory systems actually work, by using them on something personal.
+I'm building this to learn how agent and memory systems work by using them on something personal.
 
-It's also an experiment in how far agents can go at journaling. The questions I want to answer:
+It's also an experiment in how well agents can do journaling. Things I want to find out:
 
-- **Interviewing:** can an agent ask good enough questions to get the real story of your day, not just a summary?
-- **Memory:** can it remember the people, projects and threads in your life well enough to follow up ("did the bike hold up?") without making things up?
-- **Writing:** can a model write something you'd actually want to read back, and where does it break (inventing facts, misreading slang, flat writing)?
-- **Routing:** does splitting the work across specialised agents beat one big prompt?
+- Can an agent ask good enough questions to get the actual story of your day, not just a summary?
+- Can it remember the people and things going on in your life well enough to follow up on them without making stuff up?
+- Can a model write something you'd want to read back, and where does it fall over (inventing facts, misreading slang, boring writing)?
+- Does splitting the work across a few agents beat one big prompt?
 
-Everything runs locally with Ollama, because a diary is about the most personal data there is.
+It runs on Ollama because a diary is about as personal as data gets.
 
-What I've found so far is in [docs/FINDINGS.md](docs/FINDINGS.md).
+Notes on what I've found so far are in [docs/FINDINGS.md](docs/FINDINGS.md).
 
----
+## What it does right now
 
-## How it works
+1. Open the app at localhost and start chatting.
+2. The Reporter agent asks you about your day, one question at a time.
+3. Hit "Go to print". The Copy Desk agent turns that day's chats into an entry and saves it to `data/entries/2026/09/2026-09-29.md`. Printing again rewrites the entry and keeps the old one in `data/versions/`.
+4. Browse past entries in the journal view.
 
-1. **Open the app** (on your desktop, or your phone via Tailscale) and start chatting.
-2. **The Reporter interviews you.** It knows what's on your calendar and what you wrote about recently, so it asks better questions than "how was your day?"
-3. **Go to print.** The Copy Desk turns the conversation into a newspaper-style entry with a headline and saves it as `2026-09-29.md`.
-4. **Read it back.** Browse past issues, search them, or ask "when did I last see Sam?"
+An entry looks roughly like this:
 
 ```markdown
 ---
 date: 2026-09-29
 issue: 42
-headline: "Local Man Finally Fixes Bike, Rides 3km, Declares Victory"
+headline: Local Man Finally Fixes Bike, Rides 3km, Declares Victory
+subhead: Three weeks of excuses come to an end
 mood: 7
 tags: [cycling, uni]
 ---
 
 # Local Man Finally Fixes Bike, Rides 3km, Declares Victory
 
+*Three weeks of excuses come to an end*
+
 **MELBOURNE** — After three weeks of a flat tyre and mounting excuses, ...
 ```
 
-## The newsroom (agents)
+The full list of fields is in [docs/ENTRY_FORMAT.md](docs/ENTRY_FORMAT.md).
 
-| Agent | Role |
+## Agents
+
+Each agent is a folder under `apps/server/src/agents/` with a prompt and a small config file, and they're picked up automatically.
+
+| Agent | What it does now |
 | --- | --- |
-| **Editor-in-Chief** | The conductor. Routes each message to the right agent. Buttons use plain code; free text goes through a small model that returns an intent (`chat`, `edit_entry`, `recall`, `print`). When unsure, it goes to the Reporter. |
-| **Reporter** | Interviews you about your day, using your calendar and past entries. |
-| **The Morgue** | Memory: semantic search over past entries plus a facts file (people, projects, goals). |
-| **Copy Desk** | Turns the chat into an entry with a headline, handles edits ("change that bit"), and goes to print. |
+| Reporter | Interviews you about your day. It's the default for any chat message. |
+| Copy Desk | Turns the day's chats into the entry. Only runs when you hit "Go to print". |
 
-More detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+There's also a router (the "Editor-in-Chief") that picks an agent for each chat message, with a keyword fallback if the model call fails. Right now the Reporter is the only agent it can route to, so it just skips the model call.
+
+Planned, not built yet:
+
+- The Morgue: memory. Search over past entries and a facts file (people, projects, goals), so the Reporter can ask about things you mentioned before.
+- Calendar: feed your events into the Reporter so it has something to ask about.
+- Editing entries through chat ("change that bit").
+
+More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [Roadmap](ROADMAP.md).
 
 ## Stack
 
-- **Frontend:** React + Vite + Tailwind + shadcn/ui, installable as a PWA
-- **Backend:** Bun + Hono API server, which runs the agents and handles files and calendar
-- **Storage:** one Markdown file per day, SQLite for metadata, `sqlite-vec` for embeddings
-- **AI:** Ollama running natively; optional Claude/OpenAI API key
-- **Phone access:** Tailscale (HTTPS, works away from home)
+- Frontend: React, Vite, Tailwind, shadcn/ui
+- Backend: Bun and Hono, which run the agents and read/write the files
+- Storage: one Markdown file per day, chat transcripts as JSON
+- AI: Ollama
 
 ## Getting started
 
-Prerequisites:
+You'll need:
 
 - [Bun](https://bun.sh) 1.x
-- [Ollama](https://ollama.com) with a chat model pulled. The default is `qwen2.5:14b` (`ollama pull qwen2.5:14b`); any model works, set in `.env`
-- (optional) [Tailscale](https://tailscale.com) for phone access
+- [Ollama](https://ollama.com) with a chat model pulled. The default is `qwen2.5:14b` (`ollama pull qwen2.5:14b`), but you can use any model by setting it in `.env`
 
 ```bash
 git clone https://github.com/tommmmac/the-daily-you.git
@@ -83,7 +94,7 @@ bun install
 bun run dev
 ```
 
-Then open http://localhost:5173. The server runs on port 3000, and Vite forwards `/api` requests to it. Your diary is saved in `data/`.
+Then open http://localhost:5173. The server runs on port 3000 and Vite forwards `/api` requests to it. Your diary is saved in `data/`.
 
 To use a different model, set `MODEL_REPORTER`, `MODEL_COPYDESK` or `MODEL_ROUTER` (see `apps/server/src/config.ts`).
 
@@ -93,12 +104,12 @@ To use a different model, set `MODEL_REPORTER`, `MODEL_COPYDESK` or `MODEL_ROUTE
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the pieces fit together
 - [docs/ENTRY_FORMAT.md](docs/ENTRY_FORMAT.md): the entry file format (draft)
 - [docs/API.md](docs/API.md): API routes (draft)
-- [docs/FINDINGS.md](docs/FINDINGS.md): what I have learned so far
+- [docs/FINDINGS.md](docs/FINDINGS.md): what I've learned so far
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to work on it
 
 ## Privacy
 
-Everything lives in your `data/` folder: Markdown, SQLite, and nothing else. With Ollama, nothing leaves your machine. If you turn on a cloud model, your chat and entry text go to that provider. The app will always say clearly which model is in use.
+Everything is stored in your `data/` folder as Markdown and JSON. The model runs through Ollama on your machine, so nothing gets sent anywhere. The server only listens on localhost by default.
 
 ## License
 

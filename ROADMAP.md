@@ -88,7 +88,7 @@ Pick and choose. No particular order.
 
 ## Open questions
 
-- [ ] Is `qwen2.5:14b` fast enough for chat, or should the Reporter/router move to a smaller model? (Starting with 14b everywhere, `nomic-embed-text` for embeddings.)
+- [ ] Which model sizes are good enough for each role (chat vs printing), and does a smaller model for the Reporter/router make chat noticeably faster?
 - [ ] Memory agent name: **The Morgue** or **Archives**?
 - [ ] Is "day" a calendar day, or does a 1am chat count as the previous day? (Suggest: configurable cutoff, default 4am.)
 - [ ] Issue numbering: count of entries, or days since the first entry?

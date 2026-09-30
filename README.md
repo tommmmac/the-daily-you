@@ -24,14 +24,7 @@ It's also an experiment in how far agents can go at journaling. The questions I 
 
 Everything runs locally with Ollama, because a diary is about the most personal data there is.
 
-### Findings so far
-
-- **Slang breaks the whole pipeline.** "Was sick" (meaning great) got printed as "Local Developer Battles Through Illness".
-- **The interviewer's guesses leak into the story.** The Copy Desk treated the Reporter's questions as facts.
-- **Small models need structure.** The model fills a JSON schema and code does the layout; that's far more reliable than asking for formatted text.
-- **Speed is about loading.** About 77s for the first print, 9–13s once the model is loaded.
-
-The full write-ups, with examples and what I changed, are in [docs/FINDINGS.md](docs/FINDINGS.md).
+What I've found so far is in [docs/FINDINGS.md](docs/FINDINGS.md).
 
 ---
 

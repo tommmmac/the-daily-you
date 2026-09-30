@@ -142,25 +142,24 @@ Two-step generation, so the output stays reliable with small local models:
 
 ## LLM provider layer
 
-A single interface so agents don't care what's behind it:
+The app isn't tied to a model or provider. Agents never name a model: a manifest says `model: reporter`, meaning "whatever the reporter role is set to". All LLM calls go through `apps/server/src/llm/`, which today has one provider:
 
-```ts
-interface LLM {
-  chat(opts: { model: string; messages: Msg[]; stream?: boolean; json?: ZodSchema }): ...
-  embed(opts: { model: string; input: string[] }): Promise<number[][]>
-}
-```
+- `chat()`: one complete reply, optionally with tools or constrained to a JSON schema
+- `chatStream()`: the reply token by token
+- `listModels()`: what's installed, for the health check
 
-Implementations: `OllamaLLM` (default), and later `AnthropicLLM` and `OpenAILLM`. Model names are chosen per role in settings:
+Today that's Ollama. Cloud providers (Claude, OpenAI) are planned as extra providers behind the same functions, so agents, prompts and workflows don't change.
 
-| Role | Needs | Default |
-| --- | --- | --- |
-| `router` | fast, good at JSON | `qwen2.5:14b` |
-| `reporter` | fast, conversational | `qwen2.5:14b` |
-| `copydesk` | quality writing, JSON | `qwen2.5:14b` |
-| `embed` | embeddings | `nomic-embed-text` |
+Models are chosen per role in `.env`:
 
-Start with one model for every role: Ollama keeps it loaded, so nothing gets swapped in and out. Each role is still its own setting, so if chat feels slow, point `router` or `reporter` at something smaller like `qwen2.5:7b` or `gemma3:4b`.
+| Role | Needs | Setting | Default |
+| --- | --- | --- | --- |
+| `router` | fast, good at following a strict format | `MODEL_ROUTER` | `qwen2.5:14b` |
+| `reporter` | fast, conversational | `MODEL_REPORTER` | `qwen2.5:14b` |
+| `copydesk` | good writing, reliable JSON | `MODEL_COPYDESK` | `qwen2.5:14b` |
+| `embed` | embeddings (Phase 3) | `MODEL_EMBED` | `nomic-embed-text` |
+
+The defaults use one local model for every role, because Ollama keeps a single model loaded and nothing gets swapped in and out. Point any role at a different model, smaller for speed or larger for quality, without touching code.
 
 ## Storage
 

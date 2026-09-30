@@ -28,7 +28,7 @@ event: done    data: {"agent":"reporter"}
 event: error   data: {"message":"Can't reach Ollama. Is it running?"}
 ```
 
-Print can take 10–60s with a 14b model (longer on the first call while the model loads).
+Print can take a while on a local model: about 10s once the model is loaded, and up to a minute or more on the first call while it loads.
 
 ## Entries
 

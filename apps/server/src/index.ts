@@ -42,6 +42,6 @@ export default {
   port: config.port,
   hostname: config.hostname,
   fetch: app.fetch,
-  // Printing with a 14b model can take a while.
+  // Printing on a local model can take a while, especially while it loads.
   idleTimeout: 255,
 };

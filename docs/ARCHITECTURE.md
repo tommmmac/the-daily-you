@@ -66,7 +66,7 @@ the-daily-you/
 
 ## The agents
 
-Agents are **pure config**: a folder with a prompt and settings, and no code. It follows the same folder-per-agent pattern as my earlier project, hey-navi, with the code pulled out into shared folders:
+Agents are **pure config**: a folder with a prompt and settings, and no code. Agent code is pulled out into shared folders:
 
 ```
 apps/server/src/

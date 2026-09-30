@@ -1,6 +1,6 @@
 /**
  * Chat sessions: one conversation thread shared by every agent that answers in it
- * (same idea as hey-navi's shared memory, scoped to a session instead of global).
+ * (one shared thread per session, rather than one global history).
  *
  * Saved as data/transcripts/<date>/<id>.json after every message, so the files are
  * always the source of truth. This is the only module that touches transcripts.

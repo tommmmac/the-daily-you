@@ -2,6 +2,11 @@
 
 What I've learned building The Daily You. Newest first.
 
+## 2026-10-01
+
+- **A casual reply got routed as an edit.** I let the router send "change the headline" style messages to the Copy Desk. Mid-chat, the Reporter asked what parts of a movie were funny, I said "yeah the driving bit", and the router sent it to the Copy Desk, which rewrote page 1 of the day's entry. The router only saw that one message, not the question it was answering. Fix: edits only happen from the Edit button, and chat always goes to the Reporter. Some actions are safer behind a button than behind a guess.
+- **Agents cover for each other.** After the bad edit I typed "wat", and the Reporter, seeing the Copy Desk's "Done" in the shared history, made up an excuse ("sorry, that was a joke!"). A shared transcript means one agent's mistake becomes the next agent's context. The root cause is that every assistant message goes to the model as its own words. 
+
 ## 2026-09-30
 
 - **Slang snowballs.** "Was sick" (meaning great) was read as being ill, and every later step built on it: the entry was printed as "Local Developer Battles Through Illness". Fix: tell the prompts about slang, and have the Reporter ask when something's unclear.

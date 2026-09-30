@@ -46,6 +46,7 @@ Tick items off here as they land. For bigger items, open a GitHub issue and link
 - [ ] **Backend:** embeddings + `sqlite-vec`
 - [ ] **Backend:** facts extraction after each entry
 - [ ] **Backend:** recall tool for the Reporter
+- [ ] **Backend:** label other agents' turns in each agent's history, so one agent doesn't treat another's replies as its own (see [FINDINGS](docs/FINDINGS.md), 2026-10-01)
 
 ## Phase 4: On the Beat (calendar)
 

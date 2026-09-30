@@ -19,8 +19,8 @@ Tick items off here as they land. For bigger items, open a GitHub issue and link
 
 ## Phase 1: First Edition (MVP)
 
-- [ ] **Frontend:** chat UI (streaming messages, "Go to print" button)
-- [ ] **Frontend:** journal view (list of days, render Markdown)
+- [x] **Frontend:** chat UI (streaming messages, "Go to print" button)
+- [x] **Frontend:** journal view (list of days, render Markdown)
 - [x] **Backend:** agent engine (folder-per-agent, auto-discovered, router with keyword fallback)
 - [x] **Backend:** Copy Desk agent (transcript → JSON → Markdown with headline)
 - [x] **Backend:** basic Reporter prompt

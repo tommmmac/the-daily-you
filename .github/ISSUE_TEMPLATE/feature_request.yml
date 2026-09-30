@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest an idea for the paper
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it be useful?
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Frontend, Backend / AI, Docs, Not sure]

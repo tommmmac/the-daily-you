@@ -21,9 +21,11 @@ Tick items off here as they land. For bigger items, open a GitHub issue and link
 
 - [ ] **Frontend:** chat UI (streaming messages, "Go to print" button)
 - [ ] **Frontend:** journal view (list of days, render Markdown)
-- [ ] **Backend:** Copy Desk agent (transcript → JSON → Markdown with headline)
-- [ ] **Backend:** basic Reporter prompt
-- [ ] **Backend:** save entry to `data/entries/YYYY/MM/YYYY-MM-DD.md`
+- [x] **Backend:** agent engine (folder-per-agent, auto-discovered, router with keyword fallback)
+- [x] **Backend:** Copy Desk agent (transcript → JSON → Markdown with headline)
+- [x] **Backend:** basic Reporter prompt
+- [x] **Backend:** save entry to `data/entries/YYYY/MM/YYYY-MM-DD.md`
+- [x] **Backend:** API: sessions, streaming chat, print, entries (+ tests)
 
 **Goal:** chat about your day, go to print, read it back.
 

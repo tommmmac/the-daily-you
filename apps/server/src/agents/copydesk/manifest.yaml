@@ -1,0 +1,11 @@
+# The Copy Desk turns a day's chats into the printed entry.
+# Reached through the "Go to print" button (newsroom/print.ts), not free-text chat,
+# so it's not routable yet. Phase 2 makes it routable for "change that bit" edits.
+name: copydesk
+description: Writes, rewrites or edits the printed diary entry for the day.
+enabled: true
+routable: false
+model: copydesk
+output: story # replies with JSON matching schemas/story.ts
+triggers:
+  keywords: [print, publish, headline, rewrite, edit the entry]

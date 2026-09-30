@@ -33,7 +33,7 @@ How The Daily You fits together. This describes the **planned** design and will 
 
 A single Bun process serves the API and, in production, the built frontend as static files. It runs on your own machine, and your phone reaches it through Tailscale.
 
-## Repo layout (proposed)
+## Repo layout
 
 A Bun workspaces monorepo, so the frontend and backend live side by side and share types:
 
@@ -49,9 +49,11 @@ the-daily-you/
 │       └── src/
 │           ├── index.ts     # Hono app, mounts routes
 │           ├── routes/      # chat, entries, search, memory, settings
-│           ├── agents/      # editor.ts, reporter.ts, morgue.ts, copydesk.ts
-│           ├── prompts/     # prompt templates (plain .md files)
-│           ├── llm/         # provider interface + ollama/claude/openai
+│           ├── agents/      # one folder per agent (config only) + _engine/
+│           ├── tools/       # tools agents can use, by name
+│           ├── schemas/     # structured outputs agents can return
+│           ├── newsroom/    # workflows that use agents (print)
+│           ├── llm/         # ollama client (claude/openai later)
 │           ├── store/       # entries (fs), db (sqlite), vectors
 │           └── calendar/    # ICS fetch + parse
 ├── packages/
@@ -64,17 +66,38 @@ the-daily-you/
 
 ## The agents
 
-Agents are ordinary TypeScript modules: a prompt, some tools, and a call to the LLM layer. There's no agent framework. Each one takes a context object and returns a result or a stream.
+Agents are **pure config**: a folder with a prompt and settings, and no code. It follows the same folder-per-agent pattern as my earlier project, hey-navi, with the code pulled out into shared folders:
+
+```
+apps/server/src/
+├── agents/
+│   ├── _engine/          # the framework: types, loader, registry, router, runner
+│   ├── reporter/
+│   │   ├── manifest.yaml # name, description (what the router reads), routable, model, tools, output
+│   │   ├── agent.md      # system prompt with {{date}}, {{weekday}}, {{time}}, {{name}}
+│   │   └── README.md     # 2–3 sentences for humans
+│   └── copydesk/         # same three files; manifest has `output: story`
+├── tools/                # tools any agent can list in `tools: [...]` (recall in Phase 3)
+├── schemas/              # structured outputs agents can return (`story`)
+└── newsroom/             # workflows that use agents, e.g. print.ts
+```
+
+- **Personas, capabilities, workflows.** Agents are *who* (a prompt and settings). `tools/` and `schemas/` are *what they can do*, shared by name. `newsroom/` is *when things happen*: code that calls agents, like printing.
+- **Auto-discovered and checked.** At startup the loader scans for folders with a `manifest.yaml`. It stops with a clear error if a manifest names a tool, output or model that doesn't exist. Adding an agent means adding a folder.
+- **One entry point for chat.** Every chat turn goes through `chat()` in `_engine/run.ts`: route → run the agent with the session history (resolving any tool calls, then adding a grounding reminder) → save both turns, tagged with the agent that answered.
+- **Structured output.** Agents with `output:` are called with `runStructured()`. The model is forced to reply with JSON in that schema, the reply is checked with zod, and it retries once if the check fails.
+- **Shared session memory.** All agents in a session read and write the same transcript, so switching desks mid-conversation keeps context.
+
+The full contract is in [apps/server/src/agents/README.md](../apps/server/src/agents/README.md).
 
 ### Editor-in-Chief (router)
 
-- **Buttons skip the model.** "Go to print", "Edit entry" and similar actions are sent as an explicit `action` and routed in code.
-- **Free text** goes to a small, fast model with a strict JSON schema:
-  ```json
-  { "intent": "chat" | "edit_entry" | "recall" | "print", "confidence": 0.0 }
-  ```
-- If the output fails to parse, or the confidence is low, the message goes to the **Reporter**. Being wrong in that direction costs little, since the Reporter just keeps chatting.
-- In Phase 1 there's no router: everything goes to the Reporter, and printing happens only through the button.
+The router is `_engine/router.ts`, not a folder, because it chooses between agents rather than being one.
+
+- **Buttons skip the model.** "Go to print" and similar actions call their agent directly in code.
+- **Free text:** the router's prompt is built from every *routable* agent's `description`. The model replies with just an agent name.
+- **Only one routable agent:** no model call at all. This is the case in Phase 1, where only the Reporter chats.
+- **Unusable answer:** if the call fails or the answer isn't an agent name, it falls back to manifest `keywords` (only if exactly one agent matches), then to the **Reporter**. Being wrong in that direction costs little, since the Reporter just keeps chatting.
 
 ### Reporter
 
@@ -172,15 +195,19 @@ data/
 ### Chat → print (Phase 1)
 
 ```
-web: POST /api/chat {sessionId, message}   ──► Reporter ──► SSE stream of tokens
-web: POST /api/print {sessionId}           ──► Copy Desk
-                                                ├─ transcript → JSON (validated, retry once)
-                                                ├─ JSON → Markdown
-                                                ├─ write data/entries/.../<date>.md
-                                                └─ update SQLite (+ embeddings, facts in Phase 3)
-                                            ◄── { date, headline }
-web: navigate to /entry/<date>
+web: POST /api/sessions                    ──► new transcript for today's diary date
+web: POST /api/chat {sessionId}            ──► Reporter opens the interview (SSE)
+web: POST /api/chat {sessionId, message}   ──► router ──► Reporter ──► SSE stream of tokens
+web: POST /api/print {sessionId}           ──► newsroom/print.ts → copydesk, using every chat from that day
+                                                ├─ transcripts → JSON (schema-constrained, zod-validated, retry once)
+                                                ├─ JSON → Markdown (template)
+                                                ├─ old version → data/versions/<date>/vN.md
+                                                └─ write data/entries/YYYY/MM/<date>.md
+                                            ◄── { date, headline, version }
+web: navigate to /journal/<date>
 ```
+
+Phase 1 reprints rewrite the whole entry from all of the day's chats. Merging into the existing story is Phase 2.
 
 ### Recall (Phase 3)
 

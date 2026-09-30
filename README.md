@@ -11,6 +11,28 @@ Your entries are plain Markdown files on your own machine. The AI runs locally t
 
 > **Status:** early development. The first edition works: chat about your day, go to print, and read it back. See the [Roadmap](ROADMAP.md).
 
+## Why
+
+I'm building this to learn how agent systems and memory systems actually work, by using them on something personal.
+
+It's also an experiment in how far agents can go at journaling. The questions I want to answer:
+
+- **Interviewing:** can an agent ask good enough questions to get the real story of your day, not just a summary?
+- **Memory:** can it remember the people, projects and threads in your life well enough to follow up ("did the bike hold up?") without making things up?
+- **Writing:** can a model write something you'd actually want to read back, and where does it break (inventing facts, misreading slang, flat writing)?
+- **Routing:** does splitting the work across specialised agents beat one big prompt?
+
+Everything runs locally with Ollama, because a diary is about the most personal data there is.
+
+### Findings so far
+
+- **Slang breaks the whole pipeline.** "Was sick" (meaning great) got printed as "Local Developer Battles Through Illness".
+- **The interviewer's guesses leak into the story.** The Copy Desk treated the Reporter's questions as facts.
+- **Small models need structure.** The model fills a JSON schema and code does the layout; that's far more reliable than asking for formatted text.
+- **Speed is about loading.** About 77s for the first print, 9–13s once the model is loaded.
+
+The full write-ups, with examples and what I changed, are in [docs/FINDINGS.md](docs/FINDINGS.md).
+
 ---
 
 ## How it works
@@ -58,7 +80,7 @@ More detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 Prerequisites:
 
 - [Bun](https://bun.sh) 1.x
-- [Ollama](https://ollama.com) with `qwen2.5:14b` pulled (`ollama pull qwen2.5:14b`)
+- [Ollama](https://ollama.com) with a chat model pulled. The default is `qwen2.5:14b` (`ollama pull qwen2.5:14b`); any model works, set in `.env`
 - (optional) [Tailscale](https://tailscale.com) for phone access
 
 ```bash
@@ -78,6 +100,7 @@ To use a different model, set `MODEL_REPORTER`, `MODEL_COPYDESK` or `MODEL_ROUTE
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the pieces fit together
 - [docs/ENTRY_FORMAT.md](docs/ENTRY_FORMAT.md): the entry file format (draft)
 - [docs/API.md](docs/API.md): API routes (draft)
+- [docs/FINDINGS.md](docs/FINDINGS.md): what I have learned so far
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to work on it
 
 ## Privacy

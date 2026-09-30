@@ -1,12 +1,15 @@
 # The Daily You
 
+[![CI](https://github.com/tommmmac/the-daily-you/actions/workflows/ci.yml/badge.svg)](https://github.com/tommmmac/the-daily-you/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 > *All the news that's fit to journal.*
 
 **The Daily You** is an open source, local-first AI diary. You chat about your day, and it gets printed as a neatly formatted, news-style Markdown entry for that date: a headline, a lede, and the story of your day.
 
 Your entries are plain Markdown files on your own machine. The AI runs locally through [Ollama](https://ollama.com) by default, and you can add a Claude or OpenAI key if you want.
 
-> **Status:** early development, nothing runnable yet. See the [Roadmap](ROADMAP.md).
+> **Status:** early development. The app starts, but you can't journal in it yet. See the [Roadmap](ROADMAP.md).
 
 ---
 
@@ -52,12 +55,10 @@ More detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Getting started
 
-> Not ready yet. This section will be filled in during Phase 0.
-
-Prerequisites (planned):
+Prerequisites:
 
 - [Bun](https://bun.sh) 1.x
-- [Ollama](https://ollama.com) with at least one chat model and one embedding model pulled
+- [Ollama](https://ollama.com) with `qwen2.5:14b` pulled (`ollama pull qwen2.5:14b`)
 - (optional) [Tailscale](https://tailscale.com) for phone access
 
 ```bash
@@ -66,6 +67,10 @@ cd the-daily-you
 bun install
 bun run dev
 ```
+
+Then open http://localhost:5173. The server runs on port 3000, and Vite forwards `/api` requests to it. Your diary is saved in `data/`.
+
+To use a different model, set `MODEL_REPORTER`, `MODEL_COPYDESK` or `MODEL_ROUTER` (see `apps/server/src/config.ts`).
 
 ## Docs
 

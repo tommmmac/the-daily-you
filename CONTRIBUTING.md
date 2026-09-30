@@ -14,8 +14,9 @@ Roadmap tasks are tagged by area (see [ROADMAP.md](ROADMAP.md)):
 
 1. Pick an unticked item from the roadmap, or open an issue for it.
 2. Branch from `main`: `feat/chat-ui`, `fix/print-timezone`, `docs/api`, and so on.
-3. Keep PRs small and focused. One roadmap item per PR is ideal.
-4. Tick the item off in `ROADMAP.md` in the same PR.
+3. Open a PR into `main`. `main` is protected: direct pushes are blocked, CI (typecheck + build) must pass, and PRs are squash-merged.
+4. Keep PRs small and focused. One roadmap item per PR is ideal.
+5. Tick the item off in `ROADMAP.md` in the same PR.
 
 ## Commits
 

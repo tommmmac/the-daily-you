@@ -1,0 +1,20 @@
+{
+  "name": "@daily-you/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "echo \"server runs from source with bun\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@daily-you/shared": "workspace:*",
+    "hono": "^4.13.12"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "^7.0.2"
+  }
+}

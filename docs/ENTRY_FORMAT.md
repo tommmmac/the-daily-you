@@ -75,7 +75,7 @@ updated: 2026-09-29T22:40:51+10:00
 | `issue` | int | ✅ | server | Running issue number: the count of entries so far, plus one. A reprint keeps its number. |
 | `headline` | string | ✅ | Copy Desk | The front page's headline. |
 | `subhead` | string | | Copy Desk | The front page's subhead. |
-| `dateline` | string | | server | Place, upper case. Comes from `DATELINE` in `.env` (default `HOME`). |
+| `dateline` | string | | server | Place, upper case. Set on the Settings page, or `DATELINE` in `.env` (default `HOME`). |
 | `mood` | int 1–10 | | Copy Desk | The average of the pages' moods, rounded. |
 | `tags` | string[] | | Copy Desk | Every page's tags. Lower-case, short. |
 | `people` | string[] | | Copy Desk | Every page's people. |

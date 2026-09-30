@@ -6,6 +6,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    /* Bundled with @fontsource (see main.tsx), so nothing is fetched from the internet. */
+    /* Old Standard: 1800s newspaper type. Source Serif: easy to read in long columns. */
+    --font-masthead: "Old Standard TT", "Times New Roman", serif;
+    --font-headline: "Old Standard TT", "Times New Roman", serif;
+    --font-serif: "Source Serif 4 Variable", Georgia, serif;
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);

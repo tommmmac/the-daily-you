@@ -54,7 +54,7 @@ export function JournalPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="font-serif text-2xl font-bold">Back issues</h2>
+      <h2 className="font-headline text-2xl font-bold">Back issues</h2>
 
       {undo && <UndoBar message={`Deleted the issue for ${shortDate(undo.date)}.`} onUndo={doUndo} busy={busy} />}
 
@@ -81,7 +81,7 @@ export function JournalPage() {
                 No. {e.issue} · {shortDate(e.date)}
                 {e.mood !== undefined && ` · Mood ${e.mood}/10`}
               </span>
-              <span className="font-serif text-lg font-bold leading-snug group-hover:underline">{e.headline}</span>
+              <span className="font-headline text-xl font-bold leading-snug group-hover:underline">{e.headline}</span>
               {e.tags.length > 0 && (
                 <span className="flex flex-wrap gap-1">
                   {e.tags.map((t) => (

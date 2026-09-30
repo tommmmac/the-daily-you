@@ -7,6 +7,7 @@ import { listModels } from "./llm/ollama";
 import { chatRoutes } from "./routes/chat";
 import { entryRoutes } from "./routes/entries";
 import { apiError } from "./routes/errors";
+import { settingsRoutes } from "./routes/settings";
 import { ensureDataDir } from "./store/data-dir";
 import pkg from "../package.json";
 
@@ -27,6 +28,7 @@ app.get("/health", async (c) => {
 
 app.route("/", chatRoutes);
 app.route("/", entryRoutes);
+app.route("/", settingsRoutes);
 
 app.notFound((c) => apiError(c, 404, "not_found", `No route ${c.req.path}`));
 app.onError((err, c) => {

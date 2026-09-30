@@ -59,8 +59,8 @@ Print can take a while on a local model: about 10s once the model is loaded, and
 
 | Method | Route | Phase | Description |
 | --- | --- | --- | --- |
-| `GET` | `/api/settings` | 2 | Masthead name, models per role, day cutoff, etc. Secrets are redacted. |
-| `PATCH` | `/api/settings` | 2 | Partial update. |
+| `GET` | `/api/settings` | 2 | The settings in use: `{ name, paperName, dateline, dayCutoffHour, models: { reporter, copydesk, router } }`. Saved values win, then `.env`, then defaults. |
+| `PATCH` | `/api/settings` | 2 | Any of those fields (models can be partial). Saved to `data/settings.json`. Returns the settings in use. |
 | `GET` | `/api/calendar/today` | 4 | Today's events from all enabled calendars. |
 | `POST` | `/api/calendar/test` | 4 | `{ url }` → the calendars found in the ICS, for the picker. |
 

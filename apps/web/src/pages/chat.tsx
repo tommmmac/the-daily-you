@@ -145,7 +145,7 @@ export function ChatPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-serif text-2xl font-bold">Today's interview</h2>
+        <h2 className="font-headline text-2xl font-bold">Today's interview</h2>
         {session && (
           <span className="text-right text-xs uppercase tracking-wider text-muted-foreground">
             {longDate(session.date)}

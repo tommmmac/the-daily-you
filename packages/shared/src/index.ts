@@ -156,6 +156,34 @@ export type ChangeResult = z.infer<typeof ChangeResult>;
 export const VersionSummary = z.object({ version: z.number().int(), updated: z.string() });
 export type VersionSummary = z.infer<typeof VersionSummary>;
 
+/** Which model each agent role uses. */
+export const ModelSettings = z.object({
+  reporter: z.string().trim().min(1),
+  copydesk: z.string().trim().min(1),
+  router: z.string().trim().min(1),
+});
+export type ModelSettings = z.infer<typeof ModelSettings>;
+
+/** GET /api/settings: the settings in use (saved ones, falling back to .env, then defaults). */
+export const Settings = z.object({
+  /** The diarist's name, used in prompts. "" for none. */
+  name: z.string().trim().max(60),
+  /** Shown in the masthead. */
+  paperName: z.string().trim().min(1).max(60),
+  /** The place printed before each story, e.g. MELBOURNE. */
+  dateline: z.string().trim().min(1).max(40),
+  /** Chats before this hour (0-12) count as the previous day. */
+  dayCutoffHour: z.number().int().min(0).max(12),
+  models: ModelSettings,
+});
+export type Settings = z.infer<typeof Settings>;
+
+/** PATCH /api/settings, and what's saved in data/settings.json. Only the fields given change. */
+export const SettingsPatch = Settings.omit({ models: true })
+  .partial()
+  .extend({ models: ModelSettings.partial().optional() });
+export type SettingsPatch = z.infer<typeof SettingsPatch>;
+
 /** GET /api/health */
 export const Health = z.object({
   ok: z.boolean(),

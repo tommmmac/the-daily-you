@@ -47,13 +47,13 @@ the-daily-you/
 ├── apps/
 │   ├── web/                 # Frontend: React + Vite + Tailwind + shadcn
 │   │   └── src/
-│   │       ├── pages/       # chat, journal, entry (search, settings later)
+│   │       ├── pages/       # chat, journal, entry, settings (search later)
 │   │       ├── components/
 │   │       └── lib/api.ts   # typed client for the server
 │   └── server/              # Backend: Bun + Hono
 │       └── src/
 │           ├── index.ts     # Hono app, mounts routes
-│           ├── routes/      # chat, entries (search, memory, settings later)
+│           ├── routes/      # chat, entries, settings (search, memory later)
 │           ├── agents/      # one folder per agent (config only) + _engine/
 │           ├── tools/       # tools agents can use, by name (empty for now)
 │           ├── schemas/     # structured outputs agents can return
@@ -192,7 +192,7 @@ data/
 │   planned:
 ├── media/                          # photos (Phase 6)
 ├── memory.md                       # facts file (Phase 3)
-├── settings.json                   # models, calendars, masthead name, etc. (Phase 2)
+├── settings.json                   # name, paper name, dateline, day cutoff, models
 └── daily-you.db                    # SQLite: metadata, FTS, sqlite-vec (Phase 3)
 ```
 

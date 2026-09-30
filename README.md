@@ -33,6 +33,7 @@ Notes on what I've found so far are in [docs/FINDINGS.md](docs/FINDINGS.md).
 3. Hit "Go to print". The Copy Desk agent turns the chat into an entry and saves it to `data/entries/2026/09/2026-09-29.md`.
 4. Chat again later that day and hit "Add a page". The new chat goes on a second page at the end, and the first page stays as it was.
 5. Browse past entries in the journal view. Each page has Edit and Delete buttons: Edit takes an instruction like "make the headline funnier" and the Copy Desk rewrites that page. Every change keeps the old version in `data/versions/`, so there's an Undo.
+6. On the Settings page, set your name, the paper's name (it goes in the masthead, e.g. "The Tom Times"), your dateline, when a new day starts, and which model each agent uses.
 
 An entry looks roughly like this:
 
@@ -85,7 +86,7 @@ More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [Roadmap](ROADMAP.m
 You'll need:
 
 - [Bun](https://bun.sh) 1.x
-- [Ollama](https://ollama.com) with a chat model pulled. The default is `qwen2.5:14b` (`ollama pull qwen2.5:14b`), but you can use any model by setting it in `.env`
+- [Ollama](https://ollama.com) with a chat model pulled. The default is `qwen2.5:14b` (`ollama pull qwen2.5:14b`), but you can pick any installed model on the Settings page
 
 ```bash
 git clone https://github.com/tommmmac/the-daily-you.git
@@ -96,7 +97,7 @@ bun run dev
 
 Then open http://localhost:5173. The server runs on port 3000 and Vite forwards `/api` requests to it. Your diary is saved in `data/`.
 
-To use a different model, set `MODEL_REPORTER`, `MODEL_COPYDESK` or `MODEL_ROUTER` (see `apps/server/src/config.ts`).
+Settings live in `data/settings.json`. You can also set defaults in `.env` (see `.env.example`), and anything saved on the Settings page wins over those.
 
 To start fresh while testing, `bun run wipe` deletes everything in `data/`. It asks you to type "wipe" first, or you can skip that with `bun run wipe --yes`.
 

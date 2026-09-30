@@ -8,11 +8,12 @@ Tick items off here as they land. For bigger items, open a GitHub issue and link
 
 ## Phase 0: Setup
 
-- [ ] **Frontend:** React + Vite + Tailwind + shadcn scaffold, basic layout
-- [ ] **Backend:** Bun + Hono server, Ollama connected, data folder structure
-- [ ] **Shared:** decide the entry format (frontmatter fields) → [docs/ENTRY_FORMAT.md](docs/ENTRY_FORMAT.md)
-- [ ] **Shared:** decide the API routes → [docs/API.md](docs/API.md)
-- [ ] **Shared:** monorepo layout, shared types package, lint/format config
+- [x] **Frontend:** React + Vite + Tailwind + shadcn scaffold, basic layout
+- [x] **Backend:** Bun + Hono server, Ollama connected, data folder structure
+- [x] **Shared:** decide the entry format (frontmatter fields) → [docs/ENTRY_FORMAT.md](docs/ENTRY_FORMAT.md)
+- [x] **Shared:** decide the API routes → [docs/API.md](docs/API.md)
+- [x] **Shared:** monorepo layout, shared types package, CI (typecheck + build)
+- [ ] **Shared:** lint/format config (Biome?), not urgent
 
 **Done when:** `bun run dev` starts both web and server, and the web app can hit `GET /api/health` and see that Ollama is up.
 

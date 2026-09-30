@@ -4,7 +4,9 @@ How The Daily You fits together. It covers what's built and what's planned, and 
 
 ## What's built so far
 
-Phase 1: the Reporter and Copy Desk agents, the agent engine and router, chat with streaming, printing to Markdown, version files on reprint, and a web app with chat, journal and entry pages. Everything runs on Ollama and is stored as plain files. There's no SQLite, memory, calendar, cloud models, PWA or auth yet.
+Phase 1: the Reporter and Copy Desk agents, the agent engine and router, chat with streaming, printing to Markdown, and a web app with chat, journal and entry pages.
+
+From Phase 2 so far: pages (each printed chat adds a page to the day), editing a page through the Copy Desk (the Edit button on each page), deleting pages and entries, and undo through saved versions. Everything runs on Ollama and is stored as plain files. There's no SQLite, memory, calendar, cloud models, PWA or auth yet.
 
 ## Big picture
 
@@ -140,11 +142,13 @@ Two-step generation, so the output stays reliable with small local models:
    ```
 2. **JSON → Markdown** with a plain template function (no LLM). This keeps formatting consistent and makes restyling easy.
 
-Planned for Phase 2:
+Each request starts with a Task line (front page, new page, or edit), so the same agent and prompt handles all three. The workflows are in `newsroom/`:
 
-**Edits** ("change that bit"): the Copy Desk gets the current entry and the instruction and returns updated JSON. The previous version is saved first (see Versioning).
+**Pages** (`print.ts`, `pages.ts`): each chat printed becomes its own page. A new page gets the earlier pages as context so it doesn't repeat them. The entry's headline is page 1's, its mood is the average of the pages, and tags and people are combined.
 
-**Appending** (second chat on the same day): the Copy Desk gets the existing entry and the new transcript and merges them into one story. It doesn't just tack on a second article.
+**Edits** (`edit.ts`, "change that bit"): the Copy Desk gets the page's current Markdown, the chats it came from and the instruction, and returns the page as JSON again. Only that page is rewritten. The previous version is saved first (see Versioning), so the entry page can offer Undo.
+
+**Only from buttons:** the Copy Desk isn't routable, so chat always goes to the Reporter. An earlier version let the router send "change the headline" messages to it, but a casual reply ("yeah the driving bit") got routed there and rewrote a page, so edits now only happen when you press Edit.
 
 ## LLM provider layer
 
@@ -195,7 +199,7 @@ data/
 - **Entry format:** see [ENTRY_FORMAT.md](ENTRY_FORMAT.md).
 - **SQLite tables (planned, rough):** `entries` (date, issue, headline, mood, tags, updated_at, hash), `chunks` + `chunks_vec` (embeddings), `chunks_fts`, `sessions`, `events`.
 - **Reindex (planned):** on startup, compare file hashes with `entries.hash` and reindex anything that changed. This means hand-editing an entry in a text editor just works.
-- **Versioning:** before any overwrite, the current file is copied to `versions/<date>/vN.md`. There's no UI or API for old versions yet (Phase 2).
+- **Versioning:** before any overwrite or delete, the current file is copied to `versions/<date>/vN.md`. Restoring a version writes it back as a new version, which is how Undo works. There's no page for browsing old versions yet.
 
 ## Main flows
 
@@ -214,7 +218,7 @@ web: POST /api/print {sessionId}           ──► newsroom/print.ts → copyd
 web: navigate to /journal/<date>
 ```
 
-Phase 1 reprints rewrite the whole entry from all of the day's chats. Merging into the existing story is Phase 2.
+Printing a chat that's already a page rewrites only that page. A new chat adds a page.
 
 ### Recall (Phase 3)
 

@@ -30,8 +30,9 @@ Notes on what I've found so far are in [docs/FINDINGS.md](docs/FINDINGS.md).
 
 1. Open the app at localhost and start chatting.
 2. The Reporter agent asks you about your day, one question at a time.
-3. Hit "Go to print". The Copy Desk agent turns that day's chats into an entry and saves it to `data/entries/2026/09/2026-09-29.md`. Printing again rewrites the entry and keeps the old one in `data/versions/`.
-4. Browse past entries in the journal view.
+3. Hit "Go to print". The Copy Desk agent turns the chat into an entry and saves it to `data/entries/2026/09/2026-09-29.md`.
+4. Chat again later that day and hit "Add a page". The new chat goes on a second page at the end, and the first page stays as it was.
+5. Browse past entries in the journal view. Each page has Edit and Delete buttons: Edit takes an instruction like "make the headline funnier" and the Copy Desk rewrites that page. Every change keeps the old version in `data/versions/`, so there's an Undo.
 
 An entry looks roughly like this:
 
@@ -61,7 +62,7 @@ Each agent is a folder under `apps/server/src/agents/` with a prompt and a small
 | Agent | What it does now |
 | --- | --- |
 | Reporter | Interviews you about your day. It's the default for any chat message. |
-| Copy Desk | Turns the day's chats into the entry. Only runs when you hit "Go to print". |
+| Copy Desk | Turns a chat into a page of the entry when you hit print, and rewrites a page when you press Edit. It never answers in chat. |
 
 There's also a router (the "Editor-in-Chief") that picks an agent for each chat message, with a keyword fallback if the model call fails. Right now the Reporter is the only agent it can route to, so it just skips the model call.
 
@@ -69,7 +70,6 @@ Planned, not built yet:
 
 - The Morgue: memory. Search over past entries and a facts file (people, projects, goals), so the Reporter can ask about things you mentioned before.
 - Calendar: feed your events into the Reporter so it has something to ask about.
-- Editing entries through chat ("change that bit").
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [Roadmap](ROADMAP.md).
 
@@ -97,6 +97,8 @@ bun run dev
 Then open http://localhost:5173. The server runs on port 3000 and Vite forwards `/api` requests to it. Your diary is saved in `data/`.
 
 To use a different model, set `MODEL_REPORTER`, `MODEL_COPYDESK` or `MODEL_ROUTER` (see `apps/server/src/config.ts`).
+
+To start fresh while testing, `bun run wipe` deletes everything in `data/`. It asks you to type "wipe" first, or you can skip that with `bun run wipe --yes`.
 
 ## Docs
 

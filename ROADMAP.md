@@ -33,9 +33,11 @@ Tick items off here as they land. For bigger items, open a GitHub issue and link
 
 - [ ] **Frontend:** newspaper styling, custom masthead ("The Tom Times"), Vol/No issue numbers
 - [ ] **Backend:** Editor-in-Chief router (intent JSON: `chat`, `edit_entry`, `recall`, `print`)
-- [ ] **Backend:** edit entries via the Copy Desk ("change that bit")
-- [ ] **Backend:** version history
-- [ ] **Backend:** append multiple chats to the same day
+- [x] **Backend:** edit entries via the Copy Desk ("change that bit"), from each page's Edit button
+- [x] **Backend:** version history (saved on every change, restore/undo; no browsing UI yet)
+- [x] **Backend:** append multiple chats to the same day (each printed chat is a new page)
+- [x] **Frontend:** edit and delete buttons per page, delete per entry, undo
+- [x] **Shared:** `bun run wipe` to clear `data/` while testing
 
 ## Phase 3: The Morgue (memory)
 

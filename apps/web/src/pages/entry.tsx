@@ -1,37 +1,81 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Markdown from "react-markdown";
 import { Link, useParams } from "react-router";
-import type { Entry } from "@daily-you/shared";
+import { splitPages, type Entry } from "@daily-you/shared";
+import { ConfirmButton } from "@/components/confirm-button";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { UndoBar } from "@/components/undo-bar";
 import { ApiRequestError, api } from "@/lib/api";
 import { longDate } from "@/lib/dates";
 
-// One printed issue. Phase 2 gives this the proper newspaper treatment.
+type Undo = { message: string; version: number };
+
+const errorMessage = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong.");
+
+// One printed issue, one section per page. Phase 2 gives this the proper newspaper treatment.
 export function EntryPage() {
   const { date = "" } = useParams();
   const [entry, setEntry] = useState<Entry | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [undo, setUndo] = useState<Undo | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setEntry(null);
     setError(null);
+    setUndo(null);
     api
       .getEntry(date)
       .then(setEntry)
       .catch((e) =>
-        setError(e instanceof ApiRequestError && e.status === 404 ? "No issue was printed that day." : String(e.message)),
+        setError(e instanceof ApiRequestError && e.status === 404 ? "No issue was printed that day." : errorMessage(e)),
       );
   }, [date]);
 
+  /** Run an edit or delete, then reload. Returns whether it worked. */
+  async function change(run: () => Promise<{ undo: number; deleted: boolean }>, message: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await run();
+      setEntry(result.deleted ? null : await api.getEntry(date));
+      setUndo({ message: result.deleted ? "Entry deleted." : message, version: result.undo });
+      return true;
+    } catch (e) {
+      setError(errorMessage(e));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doUndo() {
+    if (!undo) return;
+    setBusy(true);
+    try {
+      setEntry(await api.restoreVersion(date, undo.version));
+      setUndo(null);
+      setError(null);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const f = entry?.frontmatter;
+  const pages = entry ? splitPages(entry.markdown) : [];
 
   return (
     <article className="flex flex-col gap-4">
-      <Link to="/journal" className="text-sm text-muted-foreground hover:underline">
+      <Link to="/journal" className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline">
         ← Back issues
       </Link>
 
+      {undo && <UndoBar message={undo.message} onUndo={doUndo} busy={busy} />}
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {!entry && !error && <p className="text-sm text-muted-foreground">Fetching from the archive…</p>}
+      {!entry && !error && !undo && <p className="text-sm text-muted-foreground">Fetching from the archive…</p>}
 
       {f && (
         <>
@@ -42,11 +86,93 @@ export function EntryPage() {
             <span>{longDate(f.date)}</span>
             {f.mood !== undefined && <span>Mood {f.mood}/10</span>}
           </div>
-          <div className="prose prose-stone max-w-none font-serif dark:prose-invert prose-headings:font-serif prose-h1:text-4xl prose-h1:leading-tight prose-blockquote:border-foreground prose-blockquote:text-xl">
-            <Markdown>{entry.markdown}</Markdown>
-          </div>
+          {pages.map((markdown, i) => (
+            <PageView
+              key={`${f.version}-${i}`}
+              number={i + 1}
+              total={pages.length}
+              markdown={markdown}
+              busy={busy}
+              onEdit={(instruction) => change(() => api.editPage(date, i + 1, instruction), `Page ${i + 1} edited.`)}
+              onDelete={() => void change(() => api.deletePage(date, i + 1), `Page ${i + 1} deleted.`)}
+            />
+          ))}
         </>
       )}
     </article>
+  );
+}
+
+function PageView({
+  number,
+  total,
+  markdown,
+  busy,
+  onEdit,
+  onDelete,
+}: {
+  number: number;
+  total: number;
+  markdown: string;
+  busy: boolean;
+  onEdit: (instruction: string) => Promise<boolean>;
+  onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [instruction, setInstruction] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!instruction.trim()) return;
+    setSaving(true);
+    // On failure keep the box open with the instruction, so it can be retried.
+    if (await onEdit(instruction.trim())) {
+      setEditing(false);
+      setInstruction("");
+    }
+    setSaving(false);
+  }
+
+  return (
+    <section className={number > 1 ? "border-t-4 border-double border-foreground pt-4" : undefined}>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">
+          {total > 1 && (number === 1 ? "Front page" : `Page ${number}`)}
+        </span>
+        <span className="flex items-center gap-1">
+          <Button variant="ghost" size="xs" disabled={busy} onClick={() => setEditing((x) => !x)}>
+            Edit
+          </Button>
+          <ConfirmButton label="Delete" confirmLabel={`Delete page ${number}`} onConfirm={onDelete} disabled={busy} />
+        </span>
+      </div>
+
+      {editing && (
+        <form onSubmit={submit} className="mb-4 flex flex-col gap-2 rounded-md border p-3">
+          <Textarea
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            placeholder='What should change? e.g. "make the headline funnier" or "it was 5km, not 3"'
+            rows={2}
+            className="resize-none"
+            disabled={saving}
+            autoFocus
+          />
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" disabled={saving || busy || !instruction.trim()}>
+              {saving ? "Setting type…" : "Apply"}
+            </Button>
+          </div>
+        </form>
+      )}
+
+      <div className="prose prose-stone max-w-none font-serif dark:prose-invert prose-headings:font-serif prose-h1:text-4xl prose-h1:leading-tight prose-blockquote:border-foreground prose-blockquote:text-xl">
+        <Markdown>{markdown}</Markdown>
+      </div>
+    </section>
   );
 }

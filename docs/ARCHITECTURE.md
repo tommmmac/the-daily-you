@@ -130,12 +130,14 @@ interface LLM {
 
 Implementations: `OllamaLLM` (default), and later `AnthropicLLM` and `OpenAILLM`. Model names are chosen per role in settings:
 
-| Role | Needs | Example default (TBD) |
+| Role | Needs | Default |
 | --- | --- | --- |
-| `router` | fast, good at JSON | small ~3B model |
-| `reporter` | fast, conversational | ~8B model |
-| `copydesk` | quality writing, JSON | the best model the machine can run |
+| `router` | fast, good at JSON | `qwen2.5:14b` |
+| `reporter` | fast, conversational | `qwen2.5:14b` |
+| `copydesk` | quality writing, JSON | `qwen2.5:14b` |
 | `embed` | embeddings | `nomic-embed-text` |
+
+Start with one model for every role: Ollama keeps it loaded, so nothing gets swapped in and out. Each role is still its own setting, so if chat feels slow, point `router` or `reporter` at something smaller like `qwen2.5:7b` or `gemma3:4b`.
 
 ## Storage
 

@@ -21,7 +21,7 @@ const entry = (date: string, version = 1): Entry => ({
     issue: 1,
     headline: 'Local Man Fixes Bike: "Easy," He Claims',
     tags: ["cycling"],
-    people: ["Sam"],
+    people: ["John"],
     events: [],
     sessions: [],
     pages: [],

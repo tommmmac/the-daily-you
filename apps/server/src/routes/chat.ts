@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { ChatRequest, CreateSessionRequest, PrintRequest, type ChatEvent, type PrintResult } from "@daily-you/shared";
 import { BadOutputError, chat } from "../agents/_engine/run";
+import { queueArchive } from "../newsroom/archive";
 import { NothingToPrintError, printSession } from "../newsroom/print";
 import { suggest } from "../newsroom/suggest";
 import { LLMUnavailableError } from "../llm/ollama";
@@ -66,6 +67,8 @@ chatRoutes.post("/print", async (c) => {
 
   try {
     const { entry, page } = await printSession(session.date, session.id);
+    // The Archivist updates memory from this page in the background (see the Memory page).
+    void queueArchive(session.date, page);
     const f = entry.frontmatter;
     return c.json<PrintResult>({ date: f.date, headline: f.pages[page - 1]!.headline, version: f.version, page });
   } catch (e) {

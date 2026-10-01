@@ -4,15 +4,21 @@ import type { Health } from "@daily-you/shared";
 import { AGENTS } from "./agents/_engine/registry";
 import { config } from "./config";
 import { listModels } from "./llm/ollama";
+import { queueSync } from "./morgue";
 import { chatRoutes } from "./routes/chat";
 import { entryRoutes } from "./routes/entries";
 import { memoryRoutes } from "./routes/memory";
 import { apiError } from "./routes/errors";
 import { settingsRoutes } from "./routes/settings";
 import { ensureDataDir } from "./store/data-dir";
+import { onEntryChange } from "./store/entries";
 import pkg from "../package.json";
 
 await ensureDataDir();
+
+// Keep The Morgue's index in step with the entries: catch up now, then after every change.
+onEntryChange((date) => void queueSync(date));
+void queueSync();
 
 const app = new Hono().basePath("/api");
 app.use(logger());

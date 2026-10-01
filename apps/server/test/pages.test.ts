@@ -12,6 +12,7 @@ const inputs: string[] = [];
 mock.module("../src/llm/ollama", () => ({
   LLMUnavailableError: class extends Error {},
   listModels: async () => [],
+  embed: async (_model: string, texts: string[]) => texts.map(() => [1, 0, 0]),
   chatStream: async function* () {},
   chat: async ({ messages }: { messages: { content: string }[] }) => {
     inputs.push(messages.at(-1)!.content);

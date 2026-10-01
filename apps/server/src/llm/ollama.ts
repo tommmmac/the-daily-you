@@ -75,6 +75,26 @@ export async function* chatStream(opts: ChatOptions): AsyncGenerator<string> {
   }
 }
 
+/** Embed texts with an embedding model: one vector per text, in order. Sent in batches. */
+export async function embed(model: string, texts: string[]): Promise<number[][]> {
+  const out: number[][] = [];
+  for (let i = 0; i < texts.length; i += 64) {
+    let res: Response;
+    try {
+      res = await fetch(`${config.ollamaHost}/api/embed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model, input: texts.slice(i, i + 64), keep_alive: config.keepAlive }),
+      });
+    } catch (e) {
+      throw new LLMUnavailableError(`Can't reach Ollama at ${config.ollamaHost}`, { cause: e });
+    }
+    if (!res.ok) throw new LLMUnavailableError(`Ollama ${res.status}: ${await res.text()}`);
+    out.push(...((await res.json()) as { embeddings: number[][] }).embeddings);
+  }
+  return out;
+}
+
 /** Installed model names, or null if Ollama isn't reachable. */
 export async function listModels(): Promise<string[] | null> {
   try {

@@ -104,6 +104,8 @@ The router is `_engine/router.ts`, not a folder, because it chooses between agen
 - **Only one routable agent:** no model call at all. This is the case in Phase 1, where only the Reporter chats.
 - **Unusable answer:** if the call fails or the answer isn't an agent name, it falls back to manifest `keywords` (only if exactly one agent matches), then to the **Reporter**. Being wrong in that direction costs little, since the Reporter just keeps chatting.
 
+**Intent (suggest, don't act):** alongside the Reporter's reply, `classifyIntent` asks the router model what your message wants: `chat`, `edit_entry`, `print` or `recall`, as JSON. It sees the Reporter's last question (labelled, not as its own turn) and the headlines of today's pages, so "yeah the driving bit" reads as an answer. `newsroom/suggest.ts` turns `print` and `edit_entry` into a button in the chat ("Go to print?", "Edit page 1?"). The edit button opens that page's Edit box with your message filled in. Nothing happens until you click, and any failure just means no button. `recall` offers nothing until The Morgue exists.
+
 ### Reporter
 
 - Conversational interviewer. Streams replies.
@@ -148,7 +150,7 @@ Each request starts with a Task line (front page, new page, or edit), so the sam
 
 **Edits** (`edit.ts`, "change that bit"): the Copy Desk gets the page's current Markdown, the chats it came from and the instruction, and returns the page as JSON again. Only that page is rewritten. The previous version is saved first (see Versioning), so the entry page can offer Undo.
 
-**Only from buttons:** the Copy Desk isn't routable, so chat always goes to the Reporter. An earlier version let the router send "change the headline" messages to it, but a casual reply ("yeah the driving bit") got routed there and rewrote a page, so edits now only happen when you press Edit.
+**Only from buttons:** the Copy Desk isn't routable, so chat always goes to the Reporter. An earlier version let the router send "change the headline" messages to it, but a casual reply ("yeah the driving bit") got routed there and rewrote a page, so edits now only happen when you press Edit. The Editor-in-Chief can still offer that button from chat (see above), but it never edits by itself.
 
 ## LLM provider layer
 
@@ -209,6 +211,7 @@ data/
 web: POST /api/sessions                    ──► new transcript for today's diary date
 web: POST /api/chat {sessionId}            ──► Reporter opens the interview (SSE)
 web: POST /api/chat {sessionId, message}   ──► router ──► Reporter ──► SSE stream of tokens
+                                                └─ intent check alongside ──► maybe a suggest event (a button)
 web: POST /api/print {sessionId}           ──► newsroom/print.ts → copydesk, using every chat from that day
                                                 ├─ transcripts → JSON (schema-constrained, zod-validated, retry once)
                                                 ├─ JSON → Markdown (template)

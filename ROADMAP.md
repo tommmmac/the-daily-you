@@ -33,7 +33,7 @@ Tick items off here as they land. For bigger items, open a GitHub issue and link
 
 - [x] **Frontend:** newspaper styling, custom masthead ("The Tom Times"), Vol/No issue numbers
 - [x] **Shared:** settings page: name, paper name, dateline, day cutoff, models (saved to `data/settings.json`)
-- [ ] **Backend:** Editor-in-Chief router (intent JSON: `chat`, `edit_entry`, `recall`, `print`)
+- [x] **Backend:** Editor-in-Chief router (intent JSON: `chat`, `edit_entry`, `recall`, `print`). It suggests a button and never acts on its own
 - [x] **Backend:** edit entries via the Copy Desk ("change that bit"), from each page's Edit button
 - [x] **Backend:** version history (saved on every change, restore/undo; no browsing UI yet)
 - [x] **Backend:** append multiple chats to the same day (each printed chat is a new page)

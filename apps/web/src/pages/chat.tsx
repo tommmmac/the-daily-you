@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router";
-import type { Session } from "@daily-you/shared";
+import type { Session, Suggestion } from "@daily-you/shared";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
@@ -51,26 +51,44 @@ export function ChatPage() {
   const [error, setError] = useState<string | null>(null);
   // Whether this day already has an entry: printing then adds a page instead of the front page.
   const [printed, setPrinted] = useState(false);
+  // What the Editor-in-Chief offers after the last message, e.g. "Go to print?".
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const started = useRef(false);
+  const latest = useRef(0); // counts streams, so a late suggestion from an old one is ignored
   const bottom = useRef<HTMLDivElement>(null);
 
   const busy = streaming !== null || printing;
   const hasUserMessage = messages.some((m) => m.role === "user");
 
   async function stream(sessionId: string, message?: string) {
+    const id = ++latest.current;
     setError(null);
+    setSuggestion(null);
     setStreaming("");
     let reply = "";
+    let done = false;
+    // The reply is finished at `done`, so the input unlocks then; a suggestion may follow.
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setMessages((m) => [...m, { role: "assistant", content: reply }]);
+      setStreaming(null);
+    };
     try {
       for await (const ev of api.chat(sessionId, message)) {
         if (ev.event === "token") {
           reply += ev.data.text;
           setStreaming(reply);
+        } else if (ev.event === "done") {
+          finish();
+        } else if (ev.event === "suggest") {
+          // Skip it if another message has been sent since.
+          if (id === latest.current) setSuggestion(ev.data);
         } else if (ev.event === "error") {
           throw new Error(ev.data.message);
         }
       }
-      setMessages((m) => [...m, { role: "assistant", content: reply }]);
+      finish();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
@@ -135,10 +153,17 @@ export function ChatPage() {
     }
   }
 
+  function openEdit(s: Extract<Suggestion, { action: "edit" }>) {
+    const params = new URLSearchParams({ edit: String(s.page), instruction: s.instruction });
+    navigate(`/journal/${s.date}?${params}`);
+  }
+
   function newChat() {
+    latest.current++;
     storeSessionId(null);
     setSession(null);
     setMessages([]);
+    setSuggestion(null);
     void start();
   }
 
@@ -161,6 +186,15 @@ export function ChatPage() {
         ))}
         {streaming !== null && (
           <Bubble role="assistant">{streaming || <span className="animate-pulse text-muted-foreground">…</span>}</Bubble>
+        )}
+        {suggestion && !busy && (
+          <SuggestionCard
+            suggestion={suggestion}
+            printLabel={printed ? "Add a page" : "Go to print"}
+            onPrint={() => void goToPrint()}
+            onEdit={openEdit}
+            onDismiss={() => setSuggestion(null)}
+          />
         )}
         <div ref={bottom} />
       </div>
@@ -201,6 +235,43 @@ export function ChatPage() {
           </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+/** An offer from the Editor-in-Chief. Nothing happens unless it's clicked. */
+function SuggestionCard({
+  suggestion,
+  printLabel,
+  onPrint,
+  onEdit,
+  onDismiss,
+}: {
+  suggestion: Suggestion;
+  printLabel: string;
+  onPrint: () => void;
+  onEdit: (s: Extract<Suggestion, { action: "edit" }>) => void;
+  onDismiss: () => void;
+}) {
+  const text =
+    suggestion.action === "print"
+      ? "Sounds like you're ready to print."
+      : `Want to change page ${suggestion.page}, "${suggestion.headline}"?`;
+  return (
+    <div className="flex flex-wrap items-center gap-2 self-start rounded-md border border-dashed px-3 py-2 text-sm">
+      <span className="text-muted-foreground">{text}</span>
+      {suggestion.action === "print" ? (
+        <Button size="sm" variant="outline" onClick={onPrint}>
+          {printLabel}
+        </Button>
+      ) : (
+        <Button size="sm" variant="outline" onClick={() => onEdit(suggestion)}>
+          Edit page {suggestion.page}
+        </Button>
+      )}
+      <Button size="sm" variant="ghost" onClick={onDismiss}>
+        No thanks
+      </Button>
     </div>
   );
 }

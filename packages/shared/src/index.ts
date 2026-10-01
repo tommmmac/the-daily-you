@@ -115,11 +115,31 @@ export const ChatRequest = z.object({
 });
 export type ChatRequest = z.infer<typeof ChatRequest>;
 
+/**
+ * Something the Editor-in-Chief thinks the diarist might want after a message. Only ever
+ * offered as a button: nothing happens until they click it.
+ */
+export const Suggestion = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("print") }),
+  z.object({
+    action: z.literal("edit"),
+    date: DateStr,
+    /** Which page to edit, from 1. */
+    page: z.number().int(),
+    headline: z.string(),
+    /** The message that sounded like an edit, to prefill the Edit box with. */
+    instruction: z.string(),
+  }),
+]);
+export type Suggestion = z.infer<typeof Suggestion>;
+
 /** SSE events streamed from POST /api/chat */
 export type ChatEvent =
   | { event: "route"; data: { agent: string } }
   | { event: "token"; data: { text: string } }
   | { event: "done"; data: { agent: string } }
+  /** Sent after `done`, only when there's something to offer. */
+  | { event: "suggest"; data: Suggestion }
   | { event: "error"; data: { message: string } };
 
 /** POST /api/print */

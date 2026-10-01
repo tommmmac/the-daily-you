@@ -25,8 +25,12 @@ SSE events from `/api/chat`:
 event: route   data: {"agent":"reporter"}
 event: token   data: {"text":"How"}
 event: done    data: {"agent":"reporter"}
+event: suggest data: {"action":"print"}
+event: suggest data: {"action":"edit","date":"2026-10-01","page":1,"headline":"...","instruction":"change the headline"}
 event: error   data: {"message":"Can't reach Ollama. Is it running?"}
 ```
+
+`suggest` only comes after `done`, and only when your message sounded like you want to print or edit. It's an offer for the web app to show as a button. Nothing is printed or edited until you click it.
 
 Print can take a while on a local model: about 10s once the model is loaded, and up to a minute or more on the first call while it loads.
 

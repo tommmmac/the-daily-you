@@ -54,10 +54,15 @@ Print can take a while on a local model: about 10s once the model is loaded, and
 
 | Method | Route | Phase | Description |
 | --- | --- | --- | --- |
-| `GET` | `/api/search?q=&limit=` | 3 | Hybrid search → `[{ date, headline, snippet, score }]` |
-| `GET` | `/api/memory` | 3 | `memory.md` contents. |
-| `PUT` | `/api/memory` | 3 | Replace `memory.md`. |
-| `POST` | `/api/reindex` | 3 | Rebuild SQLite + embeddings from `data/`. |
+| `GET` | `/api/memory` | 3 | The facts file: `{ text }`. If you haven't saved one yet you get a starter template. |
+| `PUT` | `/api/memory` | 3 | `{ text }`. Replaces `data/memory.md`. Returns `MemoryChange`. |
+| `POST` | `/api/memory/versions/:v/restore` | 3 | Brings back an old version (saving the current one first). Returns `MemoryChange`. |
+
+| `GET` | `/api/memory/log` | 3 | What the Archivist changed after each print, newest first: `[{ at, date, facts, threadsAdded, threadsResolved, undo }]`. |
+| `GET` | `/api/threads` | 3 | Open threads that haven't expired, soonest first: `[{ id, text, due, tone, from, status }]`. |
+| `PATCH` | `/api/threads/:id` | 3 | `{ status: "dismissed" \| "resolved" }`. Returns the thread. |
+
+`MemoryChange` is `{ text, undo }`. `undo` is the version to restore to undo the change, or `null` if there was no file before. The `undo` in a log entry works the same way for that print's fact changes.
 
 ## Settings & calendar
 

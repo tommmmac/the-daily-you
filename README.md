@@ -64,12 +64,17 @@ Each agent is a folder under `apps/server/src/agents/` with a prompt and a small
 | --- | --- |
 | Reporter | Interviews you about your day. It's the default for any chat message. |
 | Copy Desk | Turns a chat into a page of the entry when you hit print, and rewrites a page when you press Edit. It never answers in chat. |
+| Archivist | After each print, works out what the paper should remember: lasting facts for the facts file, and things to ask about later. Runs in the background. |
 
 There's also a router (the "Editor-in-Chief") that picks an agent for each chat message, with a keyword fallback if the model call fails. Right now the Reporter is the only agent it can route to, so it just skips that model call. It also checks whether a message sounds like you want to print or edit, and if so shows a button for it in the chat. It never prints or edits by itself.
 
+The Reporter also reads a facts file (`data/memory.md`): where you work, who your friends are, what you're up to. So "went to work today" gets "the bar or the cafe?" instead of "what do you do?". The Archivist keeps it up to date after each print, and you can edit or undo anything on the Memory page.
+
+It also remembers things to follow up on. Mention your exam is on Tuesday, and when you open the app on Wednesday the Reporter asks how it went.
+
 Planned, not built yet:
 
-- The Morgue: memory. Search over past entries and a facts file (people, projects, goals), so the Reporter can ask about things you mentioned before.
+- The rest of The Morgue (memory): bringing up related past days while you chat.
 - Calendar: feed your events into the Reporter so it has something to ask about.
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [Roadmap](ROADMAP.md).

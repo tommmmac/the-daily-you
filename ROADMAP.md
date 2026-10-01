@@ -42,11 +42,16 @@ Tick items off here as they land. For bigger items, open a GitHub issue and link
 
 ## Phase 3: The Morgue (memory)
 
-- [ ] **Frontend:** search page
-- [ ] **Frontend:** facts viewer/editor (`memory.md`)
-- [ ] **Backend:** embeddings + `sqlite-vec`
-- [ ] **Backend:** facts extraction after each entry
-- [ ] **Backend:** recall tool for the Reporter
+Memory is there so the Reporter can ask better questions, not so you can search your diary.
+
+- [x] **Frontend:** facts editor (`memory.md`), with undo
+- [x] **Backend:** the Reporter reads the facts file every chat ("went to work" gets "the bar or the cafe?")
+- [x] **Backend:** facts extraction after each print by the Archivist (auto-saved, undoable)
+- [x] **Backend:** open threads: things to follow up on ("how'd the exam go?"), picked up after each print and brought up when they're due
+- [x] **Frontend:** Memory page lists open threads (dismissable) and what was learned after each print
+- [ ] **Backend:** embeddings in a SQLite index (plain `bun:sqlite`, rebuilt from `data/`)
+- [ ] **Backend:** callbacks: recall a related past entry while you chat, picked by the model from the closest matches
+- [ ] **Backend:** patterns ("haven't heard about Sam in a while") from entry tags and people
 - [ ] **Backend:** label other agents' turns in each agent's history, so one agent doesn't treat another's replies as its own (see [FINDINGS](docs/FINDINGS.md), 2026-10-01)
 
 ## Phase 4: On the Beat (calendar)
@@ -67,6 +72,7 @@ Tick items off here as they land. For bigger items, open a GitHub issue and link
 
 Pick and choose. No particular order.
 
+- [ ] Search page over past entries (uses the Phase 3 index)
 - [ ] Voice journaling (local Whisper)
 - [ ] Weekend Edition: weekly review from a Reflector agent
 - [ ] Mood trends charts + streaks

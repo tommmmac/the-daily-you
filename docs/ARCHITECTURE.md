@@ -6,7 +6,7 @@ How The Daily You fits together. It covers what's built and what's planned, and 
 
 Phase 1: the Reporter and Copy Desk agents, the agent engine and router, chat with streaming, printing to Markdown, and a web app with chat, journal and entry pages.
 
-From Phase 2 so far: pages (each printed chat adds a page to the day), editing a page through the Copy Desk (the Edit button on each page), deleting pages and entries, and undo through saved versions. Everything runs on Ollama and is stored as plain files. There's no SQLite, memory, calendar, cloud models, PWA or auth yet.
+From Phase 2: pages (each printed chat adds a page to the day), editing a page through the Copy Desk (the Edit button on each page), deleting pages and entries, and undo through saved versions. From Phase 3 so far: a facts file the Reporter reads every chat, and the Archivist, which updates it and keeps a list of things to follow up on after each print. Everything runs on Ollama and is stored as plain files. There's no SQLite, calendar, cloud models, PWA or auth yet.
 
 ## Big picture
 
@@ -32,7 +32,7 @@ From Phase 2 so far: pages (each printed chat adds a page to the day), editing a
  │  └────────────────────────────────┘   └────────────────┘  │
  │                                                           │
  │  Storage: data/ (Markdown + JSON transcripts)             │
- │  Planned: SQLite + sqlite-vec (Phase 3), ICS (Phase 4)    │
+ │  Planned: SQLite index (Phase 3), ICS (Phase 4)           │
  └───────────────────────────────────────────────────────────┘
 ```
 
@@ -47,13 +47,13 @@ the-daily-you/
 ├── apps/
 │   ├── web/                 # Frontend: React + Vite + Tailwind + shadcn
 │   │   └── src/
-│   │       ├── pages/       # chat, journal, entry, settings (search later)
+│   │       ├── pages/       # chat, journal, entry, memory, settings
 │   │       ├── components/
 │   │       └── lib/api.ts   # typed client for the server
 │   └── server/              # Backend: Bun + Hono
 │       └── src/
 │           ├── index.ts     # Hono app, mounts routes
-│           ├── routes/      # chat, entries, settings (search, memory later)
+│           ├── routes/      # chat, entries, memory, settings
 │           ├── agents/      # one folder per agent (config only) + _engine/
 │           ├── tools/       # tools agents can use, by name (empty for now)
 │           ├── schemas/     # structured outputs agents can return
@@ -109,20 +109,30 @@ The router is `_engine/router.ts`, not a folder, because it chooses between agen
 ### Reporter
 
 - Conversational interviewer. Streams replies.
-- Context it gets now: the date, weekday, time, your name (if set), and the current chat.
+- Context it gets now: the date, weekday, time, your name (if set), the facts file (`memory.md`), open threads that are due (up to 3), and the current chat.
+- When it opens a chat and something's due, it asks about one of them instead of a generic "how was your day".
 - Planned context:
   - today's calendar events (Phase 4)
-  - the facts file (`memory.md`), trimmed to what's relevant (Phase 3)
-  - recent entries' headlines (Phase 3)
-  - a `recall` tool that queries The Morgue (Phase 3)
-- Aim: ask one good follow-up at a time, pick up on threads from past days ("Did the bike hold up?"), and know when there's enough for a story. Following up on past days needs The Morgue, so it can't do that yet.
+  - related past entries from The Morgue (Phase 3)
+- Aim: ask one good follow-up at a time, pick up on threads from past days ("Did the bike hold up?"), and know when there's enough for a story.
 
-### The Morgue (memory, Phase 3, not built)
+### The Morgue (memory, Phase 3, in progress)
 
-The plan is two kinds of memory:
+Memory is there so the Reporter can ask better questions while you journal. It isn't a search engine for your diary.
 
-1. **Entries index:** each entry is split into chunks, embedded with an Ollama embedding model, and stored in `sqlite-vec`. Search combines vector similarity with SQLite FTS5 keyword search.
-2. **Facts file:** `data/memory.md`, a human-readable, human-editable list of people, projects and goals. After each print, an extraction step suggests additions or updates, which are merged into the file. Because it's plain Markdown, the user always has the final say.
+**Facts file (built):** `data/memory.md`, plain Markdown you edit on the Memory page. It holds the stuff a friend would just know: where you work, who Priya is, what you're training for. `store/memory.ts` reads it, and `chatContext` in `agents/_engine/run.ts` puts it in the Reporter's prompt every chat turn. `<!-- -->` hint comments and empty sections are stripped first. Every save copies the old file to `data/versions/memory/vN.md`, so it can be undone.
+
+**Open threads (built):** things to follow up on, like an exam, an interview or a rolled ankle. Saved in `data/threads.json` with a `due` date. The Reporter sees open ones once they're due, and they stop showing 14 days after that if nobody answers them. You can dismiss them on the Memory page.
+
+**The Archivist (built):** after each print, `POST /api/print` queues `archivePage` (`newsroom/archive.ts`) in the background, so printing isn't any slower. The Archivist agent reads the printed chat (only your words count), the facts file and the open threads, and returns JSON:
+
+- `facts`: add / update / remove, where update and remove quote the existing line. Code applies them, and skips any that point at a line that isn't there or add something already there, so a bad answer can't mangle the file.
+- `threads_new`: what, `when` it happens (a date or nothing), and tone (`light` or `tender`). The model only reads the date off a calendar it's given, labelled "this coming Tuesday" and so on. Code works out when to ask (the day after, or 4 days later if there's no date) and adds the date to the text, e.g. "COMP3000 exam (Tue 6 Oct)".
+- `threads_resolved`: open threads this chat answered.
+
+Runs are one at a time, so two quick prints can't both rewrite `memory.md`. Each run that changes something goes into `data/memory-log.json`, which the Memory page shows with an Undo for the newest one. Edits don't re-run it, to avoid learning the same thing twice.
+
+Recalling related past entries is next, see the [Roadmap](../ROADMAP.md).
 
 ### Copy Desk
 
@@ -175,7 +185,7 @@ The defaults use one local model for every role, because Ollama keeps a single m
 
 ## Storage
 
-Plain files are the source of truth. Right now there's nothing else: entries are Markdown, transcripts are JSON. When SQLite arrives in Phase 3, it'll be an **index** that can always be rebuilt from `data/`.
+Plain files are the source of truth. Right now there's nothing else: entries and the facts file are Markdown, transcripts are JSON. When SQLite arrives in Phase 3, it'll be an **index** that can always be rebuilt from `data/`.
 
 ```
 data/
@@ -183,19 +193,23 @@ data/
 │   └── 2026/
 │       └── 09/
 │           └── 2026-09-29.md       # the entry (frontmatter + Markdown)
+├── memory.md                       # facts file (what the Reporter knows about you)
+├── memory-log.json                 # what the Archivist changed after each print
+├── threads.json                    # things to follow up on
 ├── versions/
-│   └── 2026-09-29/
-│       ├── v1.md
-│       └── v2.md
+│   ├── 2026-09-29/
+│   │   ├── v1.md
+│   │   └── v2.md
+│   └── memory/                     # old versions of memory.md
+│       └── v1.md
 ├── transcripts/
 │   └── 2026-09-29/
 │       └── <session-id>.json       # raw chat, kept for re-printing
 │
 │   planned:
 ├── media/                          # photos (Phase 6)
-├── memory.md                       # facts file (Phase 3)
 ├── settings.json                   # name, paper name, dateline, day cutoff, models
-└── daily-you.db                    # SQLite: metadata, FTS, sqlite-vec (Phase 3)
+└── morgue.sqlite                   # SQLite index of past entries for recall (Phase 3)
 ```
 
 - **Entry format:** see [ENTRY_FORMAT.md](ENTRY_FORMAT.md).

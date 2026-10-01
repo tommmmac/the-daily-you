@@ -4,6 +4,7 @@ import { config } from "../../config";
 import { chat as llmChat, chatStream, type OllamaMessage } from "../../llm/ollama";
 import { weekdayOf } from "../../store/dates";
 import { factsForPrompt, readMemory } from "../../store/memory";
+import { formatRecalled, takeRecall } from "../../morgue/recall";
 import { dueThreads } from "../../store/threads";
 import { addMessage, toHistory } from "../../store/sessions";
 import { getAgent } from "./registry";
@@ -32,17 +33,27 @@ export function promptContext(date: string): PromptContext {
     name: config.userName || "the diarist",
     facts: "",
     threads: "",
+    recalled: "",
   };
 }
 
-/** promptContext plus what the chat agents remember about the diarist. */
-export async function chatContext(date: string): Promise<PromptContext> {
+/**
+ * promptContext plus what the chat agents remember about the diarist. With a session id,
+ * it also takes the past page recalled for that chat, if one is waiting (see morgue/recall.ts).
+ */
+export async function chatContext(date: string, sessionId?: string): Promise<PromptContext> {
   const facts = factsForPrompt(await readMemory());
   const threads = (await dueThreads(date))
     .slice(0, MAX_THREADS)
     .map((t) => `- ${t.text} (came up ${weekdayOf(t.from)} ${t.from})${t.tone === "tender" ? " [sensitive: ask gently]" : ""}`)
     .join("\n");
-  return { ...promptContext(date), facts: facts || "Nothing yet.", threads: threads || NO_THREADS };
+  const recalled = sessionId ? takeRecall(sessionId) : undefined;
+  return {
+    ...promptContext(date),
+    facts: facts || "Nothing yet.",
+    threads: threads || NO_THREADS,
+    recalled: recalled ? formatRecalled(recalled, date) : "Nothing right now.",
+  };
 }
 
 /**
@@ -114,7 +125,7 @@ export async function* chat(
   const agent = getAgent(name);
   yield { type: "route", agent: agent.name };
 
-  const ctx = await chatContext(session.date);
+  const ctx = await chatContext(session.date, session.id);
   const history = toHistory(session);
   if (message) {
     await addMessage(session, { role: "user", content: message });

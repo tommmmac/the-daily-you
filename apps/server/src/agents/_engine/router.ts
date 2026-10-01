@@ -91,7 +91,7 @@ Intents:
 - chat: talking about their day, answering the Reporter, or anything else. This is almost always right.
 - edit_entry: clearly asking to change something already printed: a page, the headline, the story ("change the headline to...", "page 2 got it wrong, it was Sally"). Only possible if something has been printed.
 - print: asking to print or write up the chat now ("print it", "that's everything, write it up").
-- recall: asking about a past day ("when did I last see Sam?").
+- recall: asking about a past day ("when did I last see John?").
 
 Answering one of the Reporter's questions is always chat, even if it mentions a part of something ("yeah the driving bit"). If unsure, it's chat.
 

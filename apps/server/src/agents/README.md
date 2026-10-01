@@ -50,6 +50,7 @@ The system prompt. These placeholders are filled in fresh for every message:
 | `{{name}}` | `USER_NAME` from `.env`, or "the diarist" |
 | `{{facts}}` | The facts file (`data/memory.md`) without hints or empty sections. Chat agents only. |
 | `{{threads}}` | Open threads that are due, one per line. Chat agents only. |
+| `{{recalled}}` | A past page worth bringing up, picked after the previous turn (`morgue/recall.ts`). Chat agents only. |
 
 It uses double braces, so single braces in example JSON are safe.
 

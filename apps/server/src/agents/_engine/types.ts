@@ -12,6 +12,8 @@ export type PromptContext = {
   facts: string;
   /** Open threads that are due, one per line. Only filled in for chat turns. */
   threads: string;
+  /** A past diary page worth bringing up now, picked by morgue/recall.ts. Only filled in for chat turns. */
+  recalled: string;
 };
 
 /**

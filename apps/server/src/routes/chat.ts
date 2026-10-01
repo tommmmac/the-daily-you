@@ -6,6 +6,7 @@ import { queueArchive } from "../newsroom/archive";
 import { NothingToPrintError, printSession } from "../newsroom/print";
 import { suggest } from "../newsroom/suggest";
 import { LLMUnavailableError } from "../llm/ollama";
+import { recallFor } from "../morgue/recall";
 import { diaryDate } from "../store/dates";
 import { createSession, getSession } from "../store/sessions";
 import { apiError } from "./errors";
@@ -50,6 +51,8 @@ chatRoutes.post("/chat", async (c) => {
       await send({ event: "done", data: { agent } });
       const offer = await suggestion;
       if (offer) await send({ event: "suggest", data: offer });
+      // Look for a past page worth bringing up next turn. After the reply, so it doesn't compete with it.
+      if (message) void recallFor(session, message).catch((e) => console.warn("recall failed:", e));
     } catch (e) {
       console.error("chat failed:", e);
       const message = e instanceof LLMUnavailableError ? "Can't reach Ollama. Is it running?" : "Something went wrong.";

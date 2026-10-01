@@ -65,7 +65,7 @@ Each agent is a folder under `apps/server/src/agents/` with a prompt and a small
 | Reporter | Interviews you about your day. It's the default for any chat message. |
 | Copy Desk | Turns a chat into a page of the entry when you hit print, and rewrites a page when you press Edit. It never answers in chat. |
 
-There's also a router (the "Editor-in-Chief") that picks an agent for each chat message, with a keyword fallback if the model call fails. Right now the Reporter is the only agent it can route to, so it just skips the model call.
+There's also a router (the "Editor-in-Chief") that picks an agent for each chat message, with a keyword fallback if the model call fails. Right now the Reporter is the only agent it can route to, so it just skips that model call. It also checks whether a message sounds like you want to print or edit, and if so shows a button for it in the chat. It never prints or edits by itself.
 
 Planned, not built yet:
 

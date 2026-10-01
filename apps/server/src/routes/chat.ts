@@ -3,6 +3,7 @@ import { streamSSE } from "hono/streaming";
 import { ChatRequest, CreateSessionRequest, PrintRequest, type ChatEvent, type PrintResult } from "@daily-you/shared";
 import { BadOutputError, chat } from "../agents/_engine/run";
 import { NothingToPrintError, printSession } from "../newsroom/print";
+import { suggest } from "../newsroom/suggest";
 import { LLMUnavailableError } from "../llm/ollama";
 import { diaryDate } from "../store/dates";
 import { createSession, getSession } from "../store/sessions";
@@ -23,18 +24,21 @@ chatRoutes.get("/sessions/:id", async (c) => {
   return c.json(session);
 });
 
-// Streams the reply as Server-Sent Events: route, token..., done (or error).
+// Streams the reply as Server-Sent Events: route, token..., done, maybe suggest (or error).
 chatRoutes.post("/chat", async (c) => {
   const body = ChatRequest.safeParse(await c.req.json().catch(() => null));
   if (!body.success) return apiError(c, 400, "invalid_request", body.error.message);
   const session = await getSession(body.data.sessionId);
   if (!session) return apiError(c, 404, "not_found", "No such session");
+  const { message } = body.data;
 
   return streamSSE(c, async (stream) => {
     const send = (e: ChatEvent) => stream.writeSSE({ event: e.event, data: JSON.stringify(e.data) });
+    // Started before chat() adds the message to the session, and runs alongside the reply.
+    const suggestion = message ? suggest(session, message).catch(() => null) : Promise.resolve(null);
     let agent = "reporter";
     try {
-      for await (const ev of chat(session, body.data.message)) {
+      for await (const ev of chat(session, message)) {
         if (ev.type === "route") {
           agent = ev.agent;
           await send({ event: "route", data: { agent } });
@@ -43,6 +47,8 @@ chatRoutes.post("/chat", async (c) => {
         }
       }
       await send({ event: "done", data: { agent } });
+      const offer = await suggestion;
+      if (offer) await send({ event: "suggest", data: offer });
     } catch (e) {
       console.error("chat failed:", e);
       const message = e instanceof LLMUnavailableError ? "Can't reach Ollama. Is it running?" : "Something went wrong.";

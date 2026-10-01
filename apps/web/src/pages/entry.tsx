@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Markdown from "react-markdown";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useSearchParams } from "react-router";
 import { splitPages, type Entry } from "@daily-you/shared";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Button } from "@/components/ui/button";
@@ -33,10 +33,18 @@ const errorMessage = (e: unknown) => (e instanceof Error ? e.message : "Somethin
 // One printed issue, one section per page. Phase 2 gives this the proper newspaper treatment.
 export function EntryPage() {
   const { date = "" } = useParams();
+  const [params, setParams] = useSearchParams();
   const [entry, setEntry] = useState<Entry | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [undo, setUndo] = useState<Undo | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Coming from a chat suggestion (?edit=2&instruction=...): open that page's Edit box, filled in.
+  const prefill = { page: Number(params.get("edit")), instruction: params.get("instruction") ?? "" };
+  useEffect(() => {
+    // Once the pages have mounted with it, drop it from the URL so it doesn't reopen after saving.
+    if (entry && params.has("edit")) setParams({}, { replace: true });
+  }, [entry]);
 
   useEffect(() => {
     setEntry(null);
@@ -110,6 +118,7 @@ export function EntryPage() {
               total={pages.length}
               markdown={markdown}
               busy={busy}
+              prefill={prefill.page === i + 1 ? prefill.instruction : undefined}
               onEdit={(instruction) => change(() => api.editPage(date, i + 1, instruction), `Page ${i + 1} edited.`)}
               onDelete={() => void change(() => api.deletePage(date, i + 1), `Page ${i + 1} deleted.`)}
             />
@@ -125,6 +134,7 @@ function PageView({
   total,
   markdown,
   busy,
+  prefill,
   onEdit,
   onDelete,
 }: {
@@ -132,11 +142,13 @@ function PageView({
   total: number;
   markdown: string;
   busy: boolean;
+  /** Opens the Edit box with this instruction already in it. */
+  prefill?: string;
   onEdit: (instruction: string) => Promise<boolean>;
   onDelete: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [instruction, setInstruction] = useState("");
+  const [editing, setEditing] = useState(prefill !== undefined);
+  const [instruction, setInstruction] = useState(prefill ?? "");
   const [saving, setSaving] = useState(false);
 
   async function submit(e: FormEvent) {

@@ -137,6 +137,8 @@ export type Suggestion = z.infer<typeof Suggestion>;
 export type ChatEvent =
   | { event: "route"; data: { agent: string } }
   | { event: "token"; data: { text: string } }
+  /** Throw away the tokens so far: the reply slipped into another language and is being written again. */
+  | { event: "reset"; data: Record<string, never> }
   | { event: "done"; data: { agent: string } }
   /** Sent after `done`, only when there's something to offer. */
   | { event: "suggest"; data: Suggestion }
@@ -194,6 +196,10 @@ export const Settings = z.object({
   dateline: z.string().trim().min(1).max(40),
   /** Chats before this hour (0-12) count as the previous day. */
   dayCutoffHour: z.number().int().min(0).max(12),
+  /** What the Reporter chats in and the paper is written in, e.g. "English". */
+  language: z.string().trim().min(1).max(40),
+  /** How the paper refers to the diarist, e.g. "he/him", "she/her", "they/them". "" for not set (gender-neutral). */
+  pronouns: z.string().trim().max(30),
   models: ModelSettings,
 });
 export type Settings = z.infer<typeof Settings>;

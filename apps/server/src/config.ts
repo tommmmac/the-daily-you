@@ -67,6 +67,14 @@ export const config = {
   get dayCutoffHour() {
     return saved().dayCutoffHour ?? Number(process.env.DAY_CUTOFF_HOUR || 4);
   },
+  /** What the Reporter chats in and the paper is written in. */
+  get language() {
+    return saved().language ?? (process.env.PAPER_LANGUAGE || "English");
+  },
+  /** How the paper refers to the diarist. "" means not set, so it stays gender-neutral. */
+  get pronouns() {
+    return saved().pronouns ?? process.env.PRONOUNS ?? "";
+  },
 };
 
 export type ModelRole = keyof typeof config.models;

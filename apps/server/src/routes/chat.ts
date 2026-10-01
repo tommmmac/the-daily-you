@@ -44,6 +44,8 @@ chatRoutes.post("/chat", async (c) => {
         if (ev.type === "route") {
           agent = ev.agent;
           await send({ event: "route", data: { agent } });
+        } else if (ev.type === "reset") {
+          await send({ event: "reset", data: {} });
         } else {
           await send({ event: "token", data: { text: ev.text } });
         }

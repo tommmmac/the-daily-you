@@ -31,6 +31,8 @@ export function promptContext(date: string): PromptContext {
     weekday: weekdayOf(date),
     time: new Date().toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" }),
     name: config.userName || "the diarist",
+    language: config.language,
+    pronouns: config.pronouns || "not set, so keep it gender-neutral (they/them)",
     facts: "",
     threads: "",
     recalled: "",
@@ -60,13 +62,18 @@ export async function chatContext(date: string, sessionId?: string): Promise<Pro
  * Run one turn through a single agent's prompt, tools and history, streaming the reply.
  * Tool calls (if the agent has tools) are resolved first, then the final reply streams.
  */
-export async function* runAgent(agent: Agent, history: Msg[], ctx: PromptContext): AsyncGenerator<string> {
+export async function* runAgent(
+  agent: Agent,
+  history: Msg[],
+  ctx: PromptContext,
+  temperature?: number,
+): AsyncGenerator<string> {
   const model = config.models[agent.model];
   const messages: OllamaMessage[] = [{ role: "system", content: agent.systemPrompt(ctx) }, ...history];
   const tools = Object.values(agent.tools);
 
   if (tools.length) {
-    const first = await llmChat({ model, messages, tools: tools.map((t) => t.schema) });
+    const first = await llmChat({ model, messages, tools: tools.map((t) => t.schema), temperature });
     if (!first.tool_calls?.length) {
       yield first.content;
       return;
@@ -80,7 +87,7 @@ export async function* runAgent(agent: Agent, history: Msg[], ctx: PromptContext
     messages.push({ role: "system", content: GROUNDING_REMINDER });
   }
 
-  yield* chatStream({ model, messages });
+  yield* chatStream({ model, messages, temperature });
 }
 
 export class BadOutputError extends Error {}
@@ -109,7 +116,24 @@ export async function runStructured<T>(agent: Agent, input: string, ctx: PromptC
   throw new BadOutputError(`The ${agent.name} agent didn't return valid output`, { cause: lastError });
 }
 
-export type ChatStreamEvent = { type: "route"; agent: string } | { type: "token"; text: string };
+export type ChatStreamEvent =
+  | { type: "route"; agent: string }
+  | { type: "token"; text: string }
+  /** Drop the tokens so far: the reply is being written again (see offScript). */
+  | { type: "reset" };
+
+// Qwen now and then slides into Chinese mid-reply (docs/FINDINGS.md, 2026-10-02), and once one
+// character is out the rest follows. If that happens, the reply is thrown away and written
+// again, cooler, which makes long-shot words less likely. The last try is kept whatever it says.
+const RETRIES = 2;
+const RETRY_TEMPERATURE = 0.3;
+const CJK = /[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF]/;
+const CJK_LANGUAGE = /chinese|mandarin|cantonese|japanese|korean|中文|汉语|漢語|日本語|한국어/i;
+
+/** True if `text` has Chinese, Japanese or Korean characters but the paper's language isn't one of those. */
+export function offScript(text: string, language: string): boolean {
+  return CJK.test(text) && !CJK_LANGUAGE.test(language);
+}
 
 /**
  * The one entry point for a conversational turn. Routes the message (or uses `agentName`
@@ -135,9 +159,20 @@ export async function* chat(
   }
 
   let reply = "";
-  for await (const text of runAgent(agent, history, ctx)) {
-    reply += text;
-    yield { type: "token", text };
+  for (let attempt = 0; ; attempt++) {
+    reply = "";
+    let slipped = false;
+    for await (const text of runAgent(agent, history, ctx, attempt ? RETRY_TEMPERATURE : undefined)) {
+      if (attempt < RETRIES && offScript(text, ctx.language)) {
+        slipped = true;
+        break;
+      }
+      reply += text;
+      yield { type: "token", text };
+    }
+    if (!slipped) break;
+    console.warn(`The ${agent.name} slipped out of ${ctx.language}, writing the reply again`);
+    yield { type: "reset" };
   }
   await addMessage(session, { role: "assistant", content: reply }, agent.name);
 }

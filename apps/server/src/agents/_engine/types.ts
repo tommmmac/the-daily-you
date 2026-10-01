@@ -8,6 +8,8 @@ export type PromptContext = {
   weekday: string;
   time: string;
   name: string; // the diarist's name, may be ""
+  language: string; // what to chat and write in, e.g. "English"
+  pronouns: string; // e.g. "he/him", or a note to stay gender-neutral if not set
   /** What the facts file (data/memory.md) says about them. Only filled in for chat turns. */
   facts: string;
   /** Open threads that are due, one per line. Only filled in for chat turns. */

@@ -79,6 +79,9 @@ export function ChatPage() {
         if (ev.event === "token") {
           reply += ev.data.text;
           setStreaming(reply);
+        } else if (ev.event === "reset") {
+          reply = "";
+          setStreaming("");
         } else if (ev.event === "done") {
           finish();
         } else if (ev.event === "suggest") {

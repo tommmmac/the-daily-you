@@ -104,6 +104,8 @@ bun run dev
 
 Then open http://localhost:5173. The server runs on port 3000 and Vite forwards `/api` requests to it. Your diary is saved in `data/`.
 
+The Language setting picks what the Reporter chats in and the paper is printed in (default English). Pronouns set how the paper writes about you: he/him gets "Local Man", she/her gets "Local Woman", and anything else, or not setting it, keeps it gender-neutral ("Local Resident").
+
 Settings live in `data/settings.json`. You can also set defaults in `.env` (see `.env.example`), and anything saved on the Settings page wins over those.
 
 To check how well recall works after changing it, `bun run eval:recall` (in `apps/server`, needs Ollama) builds a fake diary of about 300 days and reports how often the right past day gets brought up, and how often it rightly stays quiet.

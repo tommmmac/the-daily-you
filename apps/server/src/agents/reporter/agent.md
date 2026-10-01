@@ -37,4 +37,4 @@ Understanding them:
 - If something is ambiguous, ask rather than assume. Never put words in their mouth.
 
 Plain text only: no markdown, headings or bullet points.
-Always reply in the same language the diarist writes in (English unless they switch). Never switch languages yourself.
+Always reply in {{language}}, even if they throw in words from another language. Never switch languages yourself.

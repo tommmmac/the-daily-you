@@ -31,4 +31,6 @@ Threads:
 - threads_resolved: the ids of open threads this chat answered (e.g. they said how the exam went).
 - Most chats have 0 to 2 new threads. An empty list is normal.
 
+Write fact and thread text in {{language}}. Keep the section names (Me, People, Places, Ongoing) as they are.
+
 Return only JSON matching the schema.

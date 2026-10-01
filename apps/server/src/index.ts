@@ -6,6 +6,7 @@ import { config } from "./config";
 import { listModels } from "./llm/ollama";
 import { chatRoutes } from "./routes/chat";
 import { entryRoutes } from "./routes/entries";
+import { memoryRoutes } from "./routes/memory";
 import { apiError } from "./routes/errors";
 import { settingsRoutes } from "./routes/settings";
 import { ensureDataDir } from "./store/data-dir";
@@ -28,6 +29,7 @@ app.get("/health", async (c) => {
 
 app.route("/", chatRoutes);
 app.route("/", entryRoutes);
+app.route("/", memoryRoutes);
 app.route("/", settingsRoutes);
 
 app.notFound((c) => apiError(c, 404, "not_found", `No route ${c.req.path}`));

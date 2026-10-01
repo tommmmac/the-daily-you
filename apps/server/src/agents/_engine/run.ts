@@ -3,6 +3,8 @@ import type { Msg, Session } from "@daily-you/shared";
 import { config } from "../../config";
 import { chat as llmChat, chatStream, type OllamaMessage } from "../../llm/ollama";
 import { weekdayOf } from "../../store/dates";
+import { factsForPrompt, readMemory } from "../../store/memory";
+import { dueThreads } from "../../store/threads";
 import { addMessage, toHistory } from "../../store/sessions";
 import { getAgent } from "./registry";
 import { route } from "./router";
@@ -15,6 +17,12 @@ const GROUNDING_REMINDER =
 
 // Sent (but never saved) when the Reporter should open the interview itself.
 const OPENER = "(The diarist has just opened the app. Greet them briefly and ask about their day.)";
+const OPENER_WITH_THREADS =
+  "(The diarist has just opened the app. Greet them briefly. Ask about ONE of the things to follow up on, or about their day if none of them fit.)";
+
+const NO_THREADS = "Nothing right now.";
+// The Reporter only asks about one, so don't crowd its prompt.
+const MAX_THREADS = 3;
 
 export function promptContext(date: string): PromptContext {
   return {
@@ -22,7 +30,19 @@ export function promptContext(date: string): PromptContext {
     weekday: weekdayOf(date),
     time: new Date().toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" }),
     name: config.userName || "the diarist",
+    facts: "",
+    threads: "",
   };
+}
+
+/** promptContext plus what the chat agents remember about the diarist. */
+export async function chatContext(date: string): Promise<PromptContext> {
+  const facts = factsForPrompt(await readMemory());
+  const threads = (await dueThreads(date))
+    .slice(0, MAX_THREADS)
+    .map((t) => `- ${t.text} (came up ${weekdayOf(t.from)} ${t.from})${t.tone === "tender" ? " [sensitive: ask gently]" : ""}`)
+    .join("\n");
+  return { ...promptContext(date), facts: facts || "Nothing yet.", threads: threads || NO_THREADS };
 }
 
 /**
@@ -94,16 +114,17 @@ export async function* chat(
   const agent = getAgent(name);
   yield { type: "route", agent: agent.name };
 
+  const ctx = await chatContext(session.date);
   const history = toHistory(session);
   if (message) {
     await addMessage(session, { role: "user", content: message });
     history.push({ role: "user", content: message });
   } else {
-    history.push({ role: "user", content: OPENER });
+    history.push({ role: "user", content: ctx.threads === NO_THREADS ? OPENER : OPENER_WITH_THREADS });
   }
 
   let reply = "";
-  for await (const text of runAgent(agent, history, promptContext(session.date))) {
+  for await (const text of runAgent(agent, history, ctx)) {
     reply += text;
     yield { type: "token", text };
   }

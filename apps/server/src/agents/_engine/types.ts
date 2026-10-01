@@ -8,6 +8,10 @@ export type PromptContext = {
   weekday: string;
   time: string;
   name: string; // the diarist's name, may be ""
+  /** What the facts file (data/memory.md) says about them. Only filled in for chat turns. */
+  facts: string;
+  /** Open threads that are due, one per line. Only filled in for chat turns. */
+  threads: string;
 };
 
 /**

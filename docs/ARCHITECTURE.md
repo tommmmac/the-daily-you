@@ -6,7 +6,7 @@ How The Daily You fits together. It covers what's built and what's planned, and 
 
 Phase 1: the Reporter and Copy Desk agents, the agent engine and router, chat with streaming, printing to Markdown, and a web app with chat, journal and entry pages.
 
-From Phase 2: pages (each printed chat adds a page to the day), editing a page through the Copy Desk (the Edit button on each page), deleting pages and entries, and undo through saved versions. From Phase 3 so far: a facts file the Reporter reads every chat, and the Archivist, which updates it and keeps a list of things to follow up on after each print. Everything runs on Ollama and is stored as plain files. There's no SQLite, calendar, cloud models, PWA or auth yet.
+From Phase 2: pages (each printed chat adds a page to the day), editing a page through the Copy Desk (the Edit button on each page), deleting pages and entries, and undo through saved versions. From Phase 3: a facts file the Reporter reads every chat, the Archivist, which updates it and keeps a list of things to follow up on after each print, and recall of related past days while you chat. Everything runs on Ollama. Plain files are the source of truth, with a SQLite index for recall that can always be rebuilt. There's no calendar, cloud models, PWA or auth yet.
 
 ## Big picture
 
@@ -32,7 +32,8 @@ From Phase 2: pages (each printed chat adds a page to the day), editing a page t
  │  └────────────────────────────────┘   └────────────────┘  │
  │                                                           │
  │  Storage: data/ (Markdown + JSON transcripts)             │
- │  Planned: SQLite index (Phase 3), ICS (Phase 4)           │
+ │  Index: data/morgue.sqlite (rebuilt from the files)       │
+ │  Planned: ICS (Phase 4)                                   │
  └───────────────────────────────────────────────────────────┘
 ```
 
@@ -109,11 +110,9 @@ The router is `_engine/router.ts`, not a folder, because it chooses between agen
 ### Reporter
 
 - Conversational interviewer. Streams replies.
-- Context it gets now: the date, weekday, time, your name (if set), the facts file (`memory.md`), open threads that are due (up to 3), and the current chat.
+- Context it gets now: the date, weekday, time, your name (if set), the facts file (`memory.md`), open threads that are due (up to 3), a past page worth bringing up (if recall found one), and the current chat.
 - When it opens a chat and something's due, it asks about one of them instead of a generic "how was your day".
-- Planned context:
-  - today's calendar events (Phase 4)
-  - related past entries from The Morgue (Phase 3)
+- Planned context: today's calendar events (Phase 4).
 - Aim: ask one good follow-up at a time, pick up on threads from past days ("Did the bike hold up?"), and know when there's enough for a story.
 
 ### The Morgue (memory, Phase 3, in progress)
@@ -132,7 +131,12 @@ Memory is there so the Reporter can ask better questions while you journal. It i
 
 Runs are one at a time, so two quick prints can't both rewrite `memory.md`. Each run that changes something goes into `data/memory-log.json`, which the Memory page shows with an Undo for the newest one. Edits don't re-run it, to avoid learning the same thing twice.
 
-Recalling related past entries is next, see the [Roadmap](../ROADMAP.md).
+**Recall (built):** bringing up a related past day while you chat. Two parts:
+
+1. **The index** (`morgue/index.ts`): one row per printed page in `data/morgue.sqlite`, with an embedding from the `embed` model (`nomic-embed-text`). Before embedding, the page gets its date and headline put in front ("Saturday 12 September 2026 (2026-09-12). Ankle Down."), since a page on its own loses who and when. `writeEntry` and `deleteEntry` tell the index about every change (print, edit, delete, undo), and it re-embeds a day when its version changes. At startup it catches up with anything it missed. It's only a cache: delete the file and it rebuilds. Vectors are compared in plain JS, which is a few milliseconds for a few hundred pages, so there's no vector extension.
+2. **The pick** (`morgue/recall.ts`): after the Reporter replies, in the background, the last few things you said are embedded and compared to every earlier page. The 20 results are chosen with MMR (maximal marginal relevance), so they're relevant but not 15 copies of the same gym day. Each one is labelled "routine" (3+ near-identical days) or "one-off". Then the router model picks the one a friend would bring up, or none. Whatever it picks goes into the Reporter's prompt on the next turn, with how long ago it was worked out in code. At most one per chat. The pick lives in memory rather than the session file, so it can't clash with saving messages.
+
+`bun run eval:recall` checks this on a fake diary. See FINDINGS (2026-10-02) for what changed the numbers.
 
 ### Copy Desk
 
@@ -179,13 +183,13 @@ Models are chosen per role in `.env`:
 | `router` | fast, good at following a strict format | `MODEL_ROUTER` | `qwen2.5:14b` |
 | `reporter` | fast, conversational | `MODEL_REPORTER` | `qwen2.5:14b` |
 | `copydesk` | good writing, reliable JSON | `MODEL_COPYDESK` | `qwen2.5:14b` |
-| `embed` | embeddings (Phase 3) | `MODEL_EMBED` | `nomic-embed-text` |
+| `embed` | embeddings for recall | `MODEL_EMBED` | `nomic-embed-text` |
 
 The defaults use one local model for every role, because Ollama keeps a single model loaded and nothing gets swapped in and out. Point any role at a different model, smaller for speed or larger for quality, without touching code.
 
 ## Storage
 
-Plain files are the source of truth. Right now there's nothing else: entries and the facts file are Markdown, transcripts are JSON. When SQLite arrives in Phase 3, it'll be an **index** that can always be rebuilt from `data/`.
+Plain files are the source of truth: entries and the facts file are Markdown, transcripts and threads are JSON. The one SQLite file, `morgue.sqlite`, is an **index** for recall that can always be rebuilt from `data/`.
 
 ```
 data/
@@ -194,6 +198,7 @@ data/
 │       └── 09/
 │           └── 2026-09-29.md       # the entry (frontmatter + Markdown)
 ├── memory.md                       # facts file (what the Reporter knows about you)
+├── morgue.sqlite                   # recall index (a cache, rebuilt from entries/)
 ├── memory-log.json                 # what the Archivist changed after each print
 ├── threads.json                    # things to follow up on
 ├── versions/
@@ -208,8 +213,7 @@ data/
 │
 │   planned:
 ├── media/                          # photos (Phase 6)
-├── settings.json                   # name, paper name, dateline, day cutoff, models
-└── morgue.sqlite                   # SQLite index of past entries for recall (Phase 3)
+└── settings.json                   # name, paper name, dateline, day cutoff, models
 ```
 
 - **Entry format:** see [ENTRY_FORMAT.md](ENTRY_FORMAT.md).

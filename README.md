@@ -72,9 +72,10 @@ The Reporter also reads a facts file (`data/memory.md`): where you work, who you
 
 It also remembers things to follow up on. Mention your exam is on Tuesday, and when you open the app on Wednesday the Reporter asks how it went.
 
+And it can bring up past days while you chat. Say you're going bouldering tonight, and if you rolled your ankle bouldering a few weeks ago, the Reporter might ask how the ankle's holding up. Every printed page is indexed by meaning (embeddings in SQLite), and after each reply a model looks at the closest past pages and picks one worth mentioning, or none.
+
 Planned, not built yet:
 
-- The rest of The Morgue (memory): bringing up related past days while you chat.
 - Calendar: feed your events into the Reporter so it has something to ask about.
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [Roadmap](ROADMAP.md).
@@ -92,6 +93,7 @@ You'll need:
 
 - [Bun](https://bun.sh) 1.x
 - [Ollama](https://ollama.com) with a chat model pulled. The default is `qwen2.5:14b` (`ollama pull qwen2.5:14b`), but you can pick any installed model on the Settings page
+- An embedding model for remembering past days: `ollama pull nomic-embed-text` (about 270MB). Without it everything else still works, the Reporter just won't bring up old entries
 
 ```bash
 git clone https://github.com/tommmmac/the-daily-you.git
@@ -103,6 +105,8 @@ bun run dev
 Then open http://localhost:5173. The server runs on port 3000 and Vite forwards `/api` requests to it. Your diary is saved in `data/`.
 
 Settings live in `data/settings.json`. You can also set defaults in `.env` (see `.env.example`), and anything saved on the Settings page wins over those.
+
+To check how well recall works after changing it, `bun run eval:recall` (in `apps/server`, needs Ollama) builds a fake diary of about 300 days and reports how often the right past day gets brought up, and how often it rightly stays quiet.
 
 To start fresh while testing, `bun run wipe` deletes everything in `data/`. It asks you to type "wipe" first, or you can skip that with `bun run wipe --yes`.
 

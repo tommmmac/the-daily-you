@@ -49,9 +49,10 @@ Memory is there so the Reporter can ask better questions, not so you can search 
 - [x] **Backend:** facts extraction after each print by the Archivist (auto-saved, undoable)
 - [x] **Backend:** open threads: things to follow up on ("how'd the exam go?"), picked up after each print and brought up when they're due
 - [x] **Frontend:** Memory page lists open threads (dismissable) and what was learned after each print
-- [ ] **Backend:** embeddings in a SQLite index (plain `bun:sqlite`, rebuilt from `data/`)
-- [ ] **Backend:** callbacks: recall a related past entry while you chat, picked by the model from the closest matches
-- [ ] **Backend:** patterns ("haven't heard about Sam in a while") from entry tags and people
+- [x] **Backend:** embeddings in a SQLite index (plain `bun:sqlite`, rebuilt from `data/`)
+- [x] **Backend:** callbacks: recall a related past entry while you chat, picked by the model from the closest matches
+- [x] **Backend:** recall eval (`bun run eval:recall`)
+- [ ] **Backend:** patterns ("haven't heard about John in a while") from entry tags and people
 - [ ] **Backend:** label other agents' turns in each agent's history, so one agent doesn't treat another's replies as its own (see [FINDINGS](docs/FINDINGS.md), 2026-10-01)
 
 ## Phase 4: On the Beat (calendar)

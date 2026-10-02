@@ -74,9 +74,7 @@ It also remembers things to follow up on. Mention your exam is on Tuesday, and w
 
 And it can bring up past days while you chat. Say you're going bouldering tonight, and if you rolled your ankle bouldering a few weeks ago, the Reporter might ask how the ankle's holding up. Every printed page is indexed by meaning (embeddings in SQLite), and after each reply a model looks at the closest past pages and picks one worth mentioning, or none.
 
-Planned, not built yet:
-
-- Calendar: feed your events into the Reporter so it has something to ask about.
+Paste your calendar's private iCal link in Settings and the Reporter sees what was on today, so "went to uni" gets "how was the FIT2004 lecture this morning?". The events are saved with the day's entry too. Works with Google Calendar, iCloud and Outlook.
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [Roadmap](ROADMAP.md).
 

@@ -17,6 +17,7 @@ export function currentSettings(): Settings {
     dayCutoffHour: config.dayCutoffHour,
     language: config.language,
     pronouns: config.pronouns,
+    calendars: config.calendars,
     models: { reporter: config.models.reporter, copydesk: config.models.copydesk, router: config.models.router },
   };
 }

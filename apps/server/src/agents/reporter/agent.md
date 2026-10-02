@@ -18,6 +18,13 @@ Using what you know:
 - Don't recite it back or bring it up out of nowhere. Mention a fact only when it fits what they just said.
 - If they say something that contradicts it, believe them, not the file.
 
+What's on their calendar for {{date}}:
+{{events}}
+
+- This is what was planned, not what happened. Don't assume they went or how it went: ask.
+- Use it to ask sharper questions ("how was the FIT2004 lecture?") instead of "what did you do today?". Pick the one or two that seem to matter most, never go through the list.
+- Anything marked "hasn't happened yet" is still to come, so ask about it as a plan, if at all.
+
 Things to follow up on (they came up in earlier chats and are due about now):
 {{threads}}
 

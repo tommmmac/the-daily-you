@@ -4,6 +4,8 @@ import { config } from "../../config";
 import { chat as llmChat, chatStream, type OllamaMessage } from "../../llm/ollama";
 import { weekdayOf } from "../../store/dates";
 import { factsForPrompt, readMemory } from "../../store/memory";
+import { eventsFor, hasCalendars } from "../../calendar/feeds";
+import { formatEvents } from "../../calendar/ics";
 import { formatQuiet, quietFor } from "../../morgue/patterns";
 import { formatRecalled, takeRecall } from "../../morgue/recall";
 import { dueThreads } from "../../store/threads";
@@ -39,13 +41,14 @@ export function promptContext(date: string): PromptContext {
     threads: "",
     recalled: "",
     quiet: "",
+    events: "",
   };
 }
 
 /**
  * promptContext plus what the chat agents remember about the diarist. With a session id,
  * it also takes the past page recalled for that chat, if one is waiting (see morgue/recall.ts).
- * A failure to work out patterns just leaves them out: they're never worth failing a chat over.
+ * A failure to work out patterns or read the calendar just leaves them out: never worth failing a chat over.
  */
 export async function chatContext(date: string, sessionId?: string): Promise<PromptContext> {
   const facts = factsForPrompt(await readMemory());
@@ -54,16 +57,20 @@ export async function chatContext(date: string, sessionId?: string): Promise<Pro
     .map((t) => `- ${t.text} (came up ${weekdayOf(t.from)} ${t.from})${t.tone === "tender" ? " [sensitive: ask gently]" : ""}`)
     .join("\n");
   const recalled = sessionId ? takeRecall(sessionId) : undefined;
-  const quiet = await quietFor(date).catch((e) => {
-    console.warn("patterns failed:", e);
-    return [];
-  });
+  const [quiet, events] = await Promise.all([
+    quietFor(date).catch((e) => {
+      console.warn("patterns failed:", e);
+      return [];
+    }),
+    hasCalendars() ? eventsFor(date).then((r) => r.events).catch(() => []) : null,
+  ]);
   return {
     ...promptContext(date),
     facts: facts || "Nothing yet.",
     threads: threads || NO_THREADS,
     recalled: recalled ? formatRecalled(recalled, date) : "Nothing right now.",
     quiet: formatQuiet(quiet.slice(0, MAX_QUIET), date) || "Nothing right now.",
+    events: events === null ? "No calendar connected." : formatEvents(events, date) || "Nothing on their calendar.",
   };
 }
 

@@ -18,6 +18,8 @@ export type PromptContext = {
   recalled: string;
   /** People and topics that used to come up a lot and have gone quiet, picked by morgue/patterns.ts. Only filled in for chat turns. */
   quiet: string;
+  /** The day's events from their calendars, one per line (calendar/ics.ts). Only filled in for chat turns. */
+  events: string;
 };
 
 /**

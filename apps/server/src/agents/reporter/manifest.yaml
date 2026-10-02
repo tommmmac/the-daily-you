@@ -4,4 +4,4 @@ description: Interviews the diarist about their day. Handles normal conversation
 enabled: true
 routable: true
 model: reporter
-tools: [] # Phase 3: recall, Phase 4: todays_events
+tools: []

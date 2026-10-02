@@ -1,6 +1,6 @@
 # API
 
-> **Status:** the Phase 0 and 1 routes and the Phase 2 entry routes are built. Anything marked *planned* may change. Request and response shapes live as zod schemas in `packages/shared`, which is the source of truth.
+> **Status:** the routes for Phases 0 to 4 are built. Anything marked *planned* may change. Request and response shapes live as zod schemas in `packages/shared`, which is the source of truth.
 
 All routes are under `/api`. JSON in and out, unless noted. Streaming uses Server-Sent Events.
 
@@ -71,10 +71,10 @@ Print can take a while on a local model: about 10s once the model is loaded, and
 
 | Method | Route | Phase | Description |
 | --- | --- | --- | --- |
-| `GET` | `/api/settings` | 2 | The settings in use: `{ name, paperName, dateline, dayCutoffHour, language, pronouns, models: { reporter, copydesk, router } }`. Saved values win, then `.env`, then defaults. |
-| `PATCH` | `/api/settings` | 2 | Any of those fields (models can be partial). Saved to `data/settings.json`. Returns the settings in use. |
-| `GET` | `/api/calendar/today` | 4 | Today's events from all enabled calendars. |
-| `POST` | `/api/calendar/test` | 4 | `{ url }` → the calendars found in the ICS, for the picker. |
+| `GET` | `/api/settings` | 2 | The settings in use: `{ name, paperName, dateline, dayCutoffHour, language, pronouns, calendars: [{ name, url, enabled }], models: { reporter, copydesk, router } }`. Saved values win, then `.env`, then defaults. |
+| `PATCH` | `/api/settings` | 2 | Any of those fields (models can be partial, `calendars` replaces the whole list). Saved to `data/settings.json`. Returns the settings in use. |
+| `GET` | `/api/calendar/today` | 4 | `{ date, events, failed }`: today's events from every enabled calendar, and the names of any that couldn't be read. |
+| `POST` | `/api/calendar/test` | 4 | `{ url }` → `{ name, events }`: the calendar's own name (or `null`) and its events today. `502 calendar_unavailable` with the reason if it can't be read. |
 
 ## Auth (Phase 5)
 
@@ -86,4 +86,4 @@ Print can take a while on a local model: about 10s once the model is loaded, and
 
 ## Errors
 
-Non-2xx responses return `{ error: { code, message } }`. Codes include `not_found`, `invalid_request`, `llm_unavailable`, `llm_bad_output`, and `unauthorized`.
+Non-2xx responses return `{ error: { code, message } }`. Codes include `not_found`, `invalid_request`, `llm_unavailable`, `llm_bad_output`, `calendar_unavailable`, and `unauthorized`.

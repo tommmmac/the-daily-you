@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import type { Settings } from "@daily-you/shared";
+import type { CalendarFeed, Settings } from "@daily-you/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
@@ -123,6 +123,10 @@ export function SettingsPage() {
         </Field>
       </Section>
 
+      <Section title="Calendars">
+        <CalendarSettings calendars={form.calendars} onChange={(v) => set("calendars", v)} />
+      </Section>
+
       <Section title="Models">
         {installed === null && (
           <p className="text-sm text-muted-foreground">Can't reach Ollama, so the installed models can't be listed.</p>
@@ -240,5 +244,141 @@ function ModelSelect({
         </option>
       ))}
     </Select>
+  );
+}
+
+/** Where each app hides its private iCal link. */
+const CALENDAR_HELP = [
+  ["Google Calendar", "Settings, pick the calendar, then Secret address in iCal format"],
+  ["iCloud", "share the calendar, tick Public Calendar, and copy the link"],
+  ["Outlook", "Settings, Shared calendars, Publish a calendar, then the ICS link"],
+];
+
+/** The site a link points at, so the private part of it isn't on screen. */
+const hostOf = (url: string) => {
+  try {
+    return new URL(url.replace(/^webcal:/i, "https:")).host;
+  } catch {
+    return url.slice(0, 30);
+  }
+};
+
+/** Calendar links: switch each on or off, rename or remove it, and add new ones after checking they work. */
+function CalendarSettings({ calendars, onChange }: { calendars: CalendarFeed[]; onChange: (v: CalendarFeed[]) => void }) {
+  const [url, setUrl] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [note, setNote] = useState<{ kind: "ok" | "error"; message: string } | null>(null);
+
+  const update = (i: number, patch: Partial<CalendarFeed>) => onChange(calendars.map((c, j) => (j === i ? { ...c, ...patch } : c)));
+
+  async function add() {
+    const link = url.trim();
+    if (!link || checking) return;
+    if (calendars.some((c) => c.url === link)) {
+      setNote({ kind: "error", message: "That calendar is already in the list." });
+      return;
+    }
+    setChecking(true);
+    setNote(null);
+    try {
+      const found = await api.testCalendar(link);
+      const name = (found.name ?? `Calendar ${calendars.length + 1}`).slice(0, 40);
+      onChange([...calendars, { name, url: link, enabled: true }]);
+      setUrl("");
+      const today = found.events.length;
+      setNote({
+        kind: "ok",
+        message: `Added "${name}", with ${today ? `${today} event${today === 1 ? "" : "s"}` : "nothing"} on today. Save to keep it.`,
+      });
+    } catch (err) {
+      setNote({ kind: "error", message: err instanceof Error ? err.message : "Couldn't read that calendar." });
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">
+        The Reporter sees what's on your calendar each day, so it can ask about the lecture or the dinner instead of
+        &ldquo;what did you do today?&rdquo;. Events are also saved with each day&rsquo;s entry.
+      </p>
+
+      {calendars.length > 0 && (
+        <ul className="flex flex-col divide-y rounded-md border">
+          {calendars.map((c, i) => (
+            <li key={c.url} className="flex items-center gap-3 px-3 py-2">
+              <input
+                type="checkbox"
+                checked={c.enabled}
+                onChange={(e) => update(i, { enabled: e.target.checked })}
+                aria-label={`Use ${c.name}`}
+                className="size-4 cursor-pointer accent-foreground"
+              />
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <Input
+                  value={c.name}
+                  onChange={(e) => update(i, { name: e.target.value })}
+                  aria-label="Calendar name"
+                  maxLength={40}
+                  required
+                  className="h-8"
+                />
+                <span className="truncate text-xs text-muted-foreground">{hostOf(c.url)}</span>
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={() => onChange(calendars.filter((_, j) => j !== i))}>
+                Remove
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium">Add a calendar</span>
+        <div className="flex gap-2">
+          <Input
+            value={url}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              setNote(null);
+            }}
+            onKeyDown={(e) => {
+              // Enter adds the link rather than saving the whole page.
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void add();
+              }
+            }}
+            placeholder="https://… or webcal://… (.ics)"
+            aria-label="Calendar link"
+            spellCheck={false}
+            autoComplete="off"
+          />
+          <Button type="button" variant="outline" onClick={add} disabled={!url.trim() || checking}>
+            {checking ? "Checking…" : "Add"}
+          </Button>
+        </div>
+        {note && (
+          <span className={note.kind === "error" ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+            {note.message}
+          </span>
+        )}
+        <details className="text-xs text-muted-foreground">
+          <summary className="cursor-pointer hover:text-foreground">Where do I find the link?</summary>
+          <ul className="mt-1.5 flex flex-col gap-1 pl-4">
+            {CALENDAR_HELP.map(([app, how]) => (
+              <li key={app} className="list-disc">
+                <span className="font-medium text-foreground">{app}:</span> {how}.
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1.5">
+            The link is private, like a password: anyone with it can read the calendar. It&rsquo;s only kept on this
+            computer, in data/settings.json.
+          </p>
+        </details>
+      </div>
+    </div>
   );
 }

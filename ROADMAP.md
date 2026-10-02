@@ -57,10 +57,10 @@ Memory is there so the Reporter can ask better questions, not so you can search 
 
 ## Phase 4: On the Beat (calendar)
 
-- [ ] **Frontend:** settings page to paste an ICS link and choose calendars
-- [ ] **Backend:** ICS parsing
-- [ ] **Backend:** feed today's events into the Reporter prompt
-- [ ] **Backend:** add events to entry frontmatter
+- [x] **Frontend:** settings page to paste an ICS link and choose calendars
+- [x] **Backend:** ICS parsing
+- [x] **Backend:** feed today's events into the Reporter prompt
+- [x] **Backend:** add events to entry frontmatter
 
 ## Phase 5: Home Delivery (mobile)
 

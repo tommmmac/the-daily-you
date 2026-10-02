@@ -10,6 +10,7 @@
  */
 import type { Entry, Session } from "@daily-you/shared";
 import { getAgent } from "../agents/_engine/registry";
+import { eventsFor, hasCalendars } from "../calendar/feeds";
 import { promptContext, runStructured } from "../agents/_engine/run";
 import { config } from "../config";
 import type { Story } from "../schemas/story";
@@ -63,6 +64,11 @@ export async function printSession(date: string, sessionId: string): Promise<{ e
   const ids = sessions.map((s) => s.id);
   pages[index] = storyToPage(story, ids);
   const entry = await buildEntry(date, pages, existing, config.models.copydesk);
+  // The day's events go in the frontmatter. If a calendar can't be read, keep what was saved before.
+  if (hasCalendars()) {
+    const { events, failed } = await eventsFor(date).catch(() => ({ events: [], failed: ["all"] }));
+    if (!failed.length) entry.frontmatter.events = events;
+  }
   await writeEntry(entry);
   await setDropped(ids.filter((id) => all.find((s) => s.id === id)?.dropped), false);
   return { entry, page: index + 1 };

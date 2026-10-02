@@ -6,7 +6,7 @@ How The Daily You fits together. It covers what's built and what's planned, and 
 
 Phase 1: the Reporter and Copy Desk agents, the agent engine and router, chat with streaming, printing to Markdown, and a web app with chat, journal and entry pages.
 
-From Phase 2: pages (each printed chat adds a page to the day), editing a page through the Copy Desk (the Edit button on each page), deleting pages and entries, and undo through saved versions. From Phase 3: a facts file the Reporter reads every chat, the Archivist, which updates it and keeps a list of things to follow up on after each print, and recall of related past days while you chat. Everything runs on Ollama. Plain files are the source of truth, with a SQLite index for recall that can always be rebuilt. There's no calendar, cloud models, PWA or auth yet.
+From Phase 2: pages (each printed chat adds a page to the day), editing a page through the Copy Desk (the Edit button on each page), deleting pages and entries, and undo through saved versions. From Phase 3: a facts file the Reporter reads every chat, the Archivist, which updates it and keeps a list of things to follow up on after each print, and recall of related past days while you chat. From Phase 4: your calendars' events in the Reporter's context and in each entry. Everything runs on Ollama. Plain files are the source of truth, with a SQLite index for recall that can always be rebuilt. There are no cloud models, PWA or auth yet.
 
 ## Big picture
 
@@ -33,7 +33,7 @@ From Phase 2: pages (each printed chat adds a page to the day), editing a page t
  │                                                           │
  │  Storage: data/ (Markdown + JSON transcripts)             │
  │  Index: data/morgue.sqlite (rebuilt from the files)       │
- │  Planned: ICS (Phase 4)                                   │
+ │  Calendars: ICS links, fetched and cached (calendar/)     │
  └───────────────────────────────────────────────────────────┘
 ```
 
@@ -83,16 +83,18 @@ apps/server/src/
 │   │   ├── agent.md      # system prompt with {{date}}, {{weekday}}, {{time}}, {{name}}
 │   │   └── README.md     # 2–3 sentences for humans
 │   └── copydesk/         # same three files; manifest has `output: story`
-├── tools/                # tools any agent can list in `tools: [...]` (recall in Phase 3)
+├── tools/                # tools any agent can list in `tools: [...]` (none yet: memory and calendar go in the prompt)
 ├── schemas/              # structured outputs agents can return (`story`)
-└── newsroom/             # workflows that use agents, e.g. print.ts
+├── newsroom/             # workflows that use agents, e.g. print.ts
+├── morgue/               # memory: the recall index, recall and patterns
+└── calendar/             # reading ICS links: ics.ts (parsing), feeds.ts (fetching and caching)
 ```
 
 - **Personas, capabilities, workflows.** Agents are *who* (a prompt and settings). `tools/` and `schemas/` are *what they can do*, shared by name. `newsroom/` is *when things happen*: code that calls agents, like printing.
 - **Auto-discovered and checked.** At startup the loader scans for folders with a `manifest.yaml`. It stops with a clear error if a manifest names a tool, output or model that doesn't exist. Adding an agent means adding a folder.
 - **One entry point for chat.** Every chat turn goes through `chat()` in `_engine/run.ts`: route → run the agent with the session history (resolving any tool calls, then adding a grounding reminder) → save both turns, tagged with the agent that answered.
 - **Structured output.** Agents with `output:` are called with `runStructured()`. The model is forced to reply with JSON in that schema, the reply is checked with zod, and it retries once if the check fails.
-- **Shared session memory.** All agents in a session read and write the same transcript, so switching desks mid-conversation keeps context.
+- **Shared session memory.** All agents in a session read and write the same transcript, so switching desks mid-conversation keeps context. Each agent only gets its own replies as its own turns; another desk's reply goes in as a note saying who wrote it.
 
 The full contract is in [apps/server/src/agents/README.md](../apps/server/src/agents/README.md).
 
@@ -110,9 +112,8 @@ The router is `_engine/router.ts`, not a folder, because it chooses between agen
 ### Reporter
 
 - Conversational interviewer. Streams replies.
-- Context it gets now: the date, weekday, time, your name (if set), the facts file (`memory.md`), open threads that are due (up to 3), a past page worth bringing up (if recall found one), up to 2 people or topics that have gone quiet, and the current chat.
+- Context it gets now: the date, weekday, time, your name (if set), the facts file (`memory.md`), open threads that are due (up to 3), a past page worth bringing up (if recall found one), up to 2 people or topics that have gone quiet, the day's calendar events, and the current chat.
 - When it opens a chat and something's due, it asks about one of them instead of a generic "how was your day".
-- Planned context: today's calendar events (Phase 4).
 - Aim: ask one good follow-up at a time, pick up on threads from past days ("Did the bike hold up?"), and know when there's enough for a story.
 
 ### The Morgue (memory, Phase 3, in progress)
@@ -247,11 +248,13 @@ Printing a chat that's already a page rewrites only that page. A new chat adds a
 
 "When did I last go climbing?" → router says `recall` → Morgue hybrid search → top chunks + dates → the Reporter answers with citations to entries.
 
-## Calendar (Phase 4)
+## Calendar (Phase 4, built)
 
-- User pastes one or more ICS URLs (Google/Outlook/iCloud "secret address") in settings.
-- Server fetches and caches them (for example every 30 min), and expands recurring events with a library such as `node-ical` or `ical.js`.
-- Today's events go into the Reporter's context. On print, they're written to the entry's `events` frontmatter.
+- **Settings:** paste one or more ICS links (Google, iCloud or Outlook "secret address"; `webcal://` works too). Adding one checks it first (`POST /api/calendar/test`), names it after the calendar's own name, and says how many events it has today. Each can be switched off without removing it. Saved in `data/settings.json` only, never in `.env`, since the links are private.
+- **Reading them** (`calendar/ics.ts`): `ical.js` parses the file, registers its time zones, and expands recurring events. Moved or changed occurrences ("this week's lecture is in another room") replace their slot in the series, and cancelled ones are left out. A day is midnight to midnight, local time. All-day events are saved as plain dates, with the end exclusive like ICS.
+- **Fetching** (`calendar/feeds.ts`): each link is cached for 15 minutes, with an 8 second timeout. If a fetch fails, the last good copy is used. Links never go in the logs, only the calendar's name.
+- **The Reporter** gets the day's events as `{{events}}`, with times worked out in code ("10:00 am to 12:00 pm: FIT2004 Lecture, at Clayton [Uni]"). Anything that hasn't started yet is marked, so it's asked about as a plan. It's told the calendar is what was planned, not what happened.
+- **On print**, the day's events are written to the entry's `events` frontmatter. If a calendar can't be read right then, the events saved before are kept.
 
 ## Security & access (Phase 5)
 

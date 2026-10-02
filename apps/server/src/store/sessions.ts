@@ -9,6 +9,7 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { Session, type Msg } from "@daily-you/shared";
 import { config } from "../config";
+import type { OllamaMessage } from "../llm/ollama";
 import { isoLocal } from "./dates";
 
 const transcriptsDir = () => join(config.dataDir, "transcripts");
@@ -70,7 +71,19 @@ export async function sessionsForDate(date: string): Promise<Session[]> {
   return sessions.filter((s): s is Session => s !== null).sort((a, b) => a.created.localeCompare(b.created));
 }
 
-/** The {role, content} history an LLM call expects (drops agent/at). */
-export function toHistory(session: Session): Msg[] {
-  return session.messages.map(({ role, content }) => ({ role, content }));
+/**
+ * The {role, content} history an LLM call expects, as `agent` should see it. Only its own
+ * replies stay assistant turns. Another desk's reply becomes a labelled note, or the model
+ * takes it as its own words and covers for it (docs/FINDINGS.md, 2026-10-01).
+ * Untagged replies are older than tagging, when only the Reporter chatted.
+ */
+export function toHistory(session: Session, agent: string): OllamaMessage[] {
+  return session.messages.map(({ role, content, agent: from = "reporter" }) => {
+    if (role !== "assistant" || from === agent) return { role, content };
+    return { role: "system", content: `The ${deskName(from)} (another desk, not you) replied to the diarist here:\n${content}` };
+  });
 }
+
+// "copydesk" -> "Copy Desk". Any desk without an entry here just gets its folder name.
+const DESK_NAMES: Record<string, string> = { reporter: "Reporter", copydesk: "Copy Desk", archivist: "Archivist" };
+const deskName = (agent: string) => DESK_NAMES[agent] ?? agent;

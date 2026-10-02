@@ -8,7 +8,8 @@
     "start": "bun --env-file=../../.env src/index.ts",
     "build": "echo \"server runs from source with bun\"",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "eval:recall": "bun --env-file=../../.env eval/recall.ts"
   },
   "dependencies": {
     "@daily-you/shared": "workspace:*",

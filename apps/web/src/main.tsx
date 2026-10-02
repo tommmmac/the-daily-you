@@ -11,6 +11,7 @@ import { SettingsProvider } from "@/lib/settings";
 import { ChatPage } from "@/pages/chat";
 import { EntryPage } from "@/pages/entry";
 import { JournalPage } from "@/pages/journal";
+import { MemoryPage } from "@/pages/memory";
 import { SettingsPage } from "@/pages/settings";
 import "./index.css";
 
@@ -24,6 +25,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="chat" element={<ChatPage />} />
             <Route path="journal" element={<JournalPage />} />
             <Route path="journal/:date" element={<EntryPage />} />
+            <Route path="memory" element={<MemoryPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>

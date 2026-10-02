@@ -2,9 +2,11 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { ChatRequest, CreateSessionRequest, PrintRequest, type ChatEvent, type PrintResult } from "@daily-you/shared";
 import { BadOutputError, chat } from "../agents/_engine/run";
+import { queueArchive } from "../newsroom/archive";
 import { NothingToPrintError, printSession } from "../newsroom/print";
 import { suggest } from "../newsroom/suggest";
 import { LLMUnavailableError } from "../llm/ollama";
+import { recallFor } from "../morgue/recall";
 import { diaryDate } from "../store/dates";
 import { createSession, getSession } from "../store/sessions";
 import { apiError } from "./errors";
@@ -42,6 +44,8 @@ chatRoutes.post("/chat", async (c) => {
         if (ev.type === "route") {
           agent = ev.agent;
           await send({ event: "route", data: { agent } });
+        } else if (ev.type === "reset") {
+          await send({ event: "reset", data: {} });
         } else {
           await send({ event: "token", data: { text: ev.text } });
         }
@@ -49,6 +53,8 @@ chatRoutes.post("/chat", async (c) => {
       await send({ event: "done", data: { agent } });
       const offer = await suggestion;
       if (offer) await send({ event: "suggest", data: offer });
+      // Look for a past page worth bringing up next turn. After the reply, so it doesn't compete with it.
+      if (message) void recallFor(session, message).catch((e) => console.warn("recall failed:", e));
     } catch (e) {
       console.error("chat failed:", e);
       const message = e instanceof LLMUnavailableError ? "Can't reach Ollama. Is it running?" : "Something went wrong.";
@@ -66,6 +72,8 @@ chatRoutes.post("/print", async (c) => {
 
   try {
     const { entry, page } = await printSession(session.date, session.id);
+    // The Archivist updates memory from this page in the background (see the Memory page).
+    void queueArchive(session.date, page);
     const f = entry.frontmatter;
     return c.json<PrintResult>({ date: f.date, headline: f.pages[page - 1]!.headline, version: f.version, page });
   } catch (e) {

@@ -6,10 +6,15 @@ import type {
   Entry,
   EntrySummary,
   Health,
+  Memory,
+  MemoryChange,
+  MemoryLogEntry,
   PrintResult,
   Session,
   Settings,
   SettingsPatch,
+  Thread,
+  ThreadPatch,
 } from "@daily-you/shared";
 
 export class ApiRequestError extends Error {
@@ -86,6 +91,13 @@ export const api = {
     post<ChangeResult>(`${day(date)}/pages/${page}/edit`, { instruction }),
   deletePage: (date: string, page: number) => del<ChangeResult>(`${day(date)}/pages/${page}`),
   restoreVersion: (date: string, version: number) => post<Entry>(`${day(date)}/versions/${version}/restore`, {}),
+  getMemory: () => request<Memory>("/memory"),
+  saveMemory: (text: string) => request<MemoryChange>("/memory", { method: "PUT", body: JSON.stringify({ text }) }),
+  restoreMemory: (version: number) => post<MemoryChange>(`/memory/versions/${version}/restore`, {}),
+  getMemoryLog: () => request<MemoryLogEntry[]>("/memory/log"),
+  listThreads: () => request<Thread[]>("/threads"),
+  updateThread: (id: string, status: ThreadPatch["status"]) =>
+    request<Thread>(`/threads/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ status }) }),
   getSettings: () => request<Settings>("/settings"),
   updateSettings: (patch: SettingsPatch) =>
     request<Settings>("/settings", { method: "PATCH", body: JSON.stringify(patch) }),

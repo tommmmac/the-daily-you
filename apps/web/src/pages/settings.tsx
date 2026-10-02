@@ -60,6 +60,9 @@ export function SettingsPage() {
         <Field label="Your name" hint="The Reporter calls you this. Leave blank to stay anonymous.">
           <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Tom" maxLength={60} />
         </Field>
+        <Field label="Pronouns" hint="How the paper writes about you, e.g. Local Man or Local Woman. Not set keeps it gender-neutral.">
+          <PronounsSelect value={form.pronouns} onChange={(v) => set("pronouns", v)} />
+        </Field>
         <Field
           label="Paper name"
           hint={
@@ -93,6 +96,21 @@ export function SettingsPage() {
             maxLength={40}
             required
           />
+        </Field>
+        <Field label="Language" hint="The Reporter chats in this and the paper is printed in it. Any language your model knows.">
+          <Input
+            value={form.language}
+            onChange={(e) => set("language", e.target.value)}
+            placeholder="e.g. English"
+            list="languages"
+            maxLength={40}
+            required
+          />
+          <datalist id="languages">
+            {["English", "Spanish", "French", "German", "Italian", "Portuguese", "Chinese", "Japanese", "Korean", "Vietnamese", "Hindi", "Indonesian"].map((l) => (
+              <option key={l} value={l} />
+            ))}
+          </datalist>
         </Field>
         <Field label="New day starts at" hint="Chats before this time count as the day before, for late nights.">
           <Select value={form.dayCutoffHour} onChange={(v) => set("dayCutoffHour", Number(v))}>
@@ -161,6 +179,42 @@ function Select({ value, onChange, children }: { value: string | number; onChang
     >
       {children}
     </select>
+  );
+}
+
+const PRONOUNS = ["he/him", "she/her", "they/them"];
+
+/** The common pronouns, or "Other…" to type your own. "" is not set. */
+function PronounsSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [other, setOther] = useState(value !== "" && !PRONOUNS.includes(value));
+  return (
+    <div className="flex gap-2">
+      <Select
+        value={other ? "other" : value}
+        onChange={(v) => {
+          setOther(v === "other");
+          onChange(v === "other" ? "" : v);
+        }}
+      >
+        <option value="">Not set (gender-neutral)</option>
+        {PRONOUNS.map((p) => (
+          <option key={p} value={p}>
+            {p}
+          </option>
+        ))}
+        <option value="other">Other…</option>
+      </Select>
+      {other && (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="e.g. xe/xem"
+          aria-label="Your pronouns"
+          maxLength={30}
+          autoFocus
+        />
+      )}
+    </div>
   );
 }
 

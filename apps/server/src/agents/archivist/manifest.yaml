@@ -1,0 +1,9 @@
+# The Archivist keeps the paper's memory: after each print it updates the facts file
+# (data/memory.md) and the list of things to follow up on (data/threads.json).
+# Only reached from code (newsroom/archive.ts), never from chat.
+name: archivist
+description: Updates the facts file and open threads after a chat is printed.
+enabled: true
+routable: false
+model: copydesk
+output: archive_notes # replies with JSON matching schemas/archive.ts

@@ -48,6 +48,12 @@ The system prompt. These placeholders are filled in fresh for every message:
 | `{{weekday}}` | `Wednesday` |
 | `{{time}}` | `9:14 pm` |
 | `{{name}}` | `USER_NAME` from `.env`, or "the diarist" |
+| `{{language}}` | The Language setting, or `PAPER_LANGUAGE` from `.env`, default "English" |
+| `{{pronouns}}` | The Pronouns setting (e.g. "he/him"), or a note to stay gender-neutral if it isn't set |
+| `{{facts}}` | The facts file (`data/memory.md`) without hints or empty sections. Chat agents only. |
+| `{{threads}}` | Open threads that are due, one per line. Chat agents only. |
+| `{{recalled}}` | A past page worth bringing up, picked after the previous turn (`morgue/recall.ts`). Chat agents only. |
+| `{{quiet}}` | People and topics that used to come up a lot and have gone quiet (`morgue/patterns.ts`). Chat agents only. |
 
 It uses double braces, so single braces in example JSON are safe.
 

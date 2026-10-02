@@ -15,6 +15,13 @@ export function weekdayOf(date: string): string {
   return new Date(`${date}T12:00:00`).toLocaleDateString("en-AU", { weekday: "long" });
 }
 
+/** The YYYY-MM-DD date `days` after `date` (negative goes back). */
+export function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T12:00:00`);
+  d.setDate(d.getDate() + days);
+  return d.toLocaleDateString("en-CA");
+}
+
 /** Local time with offset, e.g. 2026-09-30T21:14:03+10:00 */
 export function isoLocal(d = new Date()): string {
   const pad = (n: number) => String(Math.floor(Math.abs(n))).padStart(2, "0");

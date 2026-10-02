@@ -20,7 +20,7 @@ subhead: "Tyre levers, YouTube and sheer stubbornness credited"
 dateline: MELBOURNE
 mood: 7
 tags: [cycling, uni]
-people: [Sam]
+people: [John]
 events:
   - title: "FIT2004 Lecture"
     start: 2026-09-29T10:00:00+10:00
@@ -31,7 +31,7 @@ pages:
     subhead: "Tyre levers, YouTube and sheer stubbornness credited"
     mood: 6
     tags: [cycling, uni]
-    people: [Sam]
+    people: [John]
     sessions: [2026-09-29-a1b2c3d4]
   - headline: "Evening Ride Ends in Kebab"
     subhead: "Correspondent refuels after second outing"

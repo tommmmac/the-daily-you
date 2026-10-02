@@ -52,16 +52,30 @@ async function saveVersion(date: string): Promise<Entry | null> {
   return existing;
 }
 
+// Every change to an entry goes through writeEntry or deleteEntry (print, edit, delete,
+// undo), so this is where anything that mirrors entries (like The Morgue's index) hears about it.
+const listeners = new Set<(date: string) => void>();
+
+/** Call `fn` with the date whenever an entry is written or deleted. Returns an unsubscribe function. */
+export function onEntryChange(fn: (date: string) => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
 /** Write an entry, saving the previous version first if one exists. */
 export async function writeEntry(entry: Entry): Promise<void> {
   await saveVersion(entry.frontmatter.date);
   await Bun.write(entryPath(entry.frontmatter.date), serializeEntry(entry));
+  for (const fn of listeners) fn(entry.frontmatter.date);
 }
 
 /** Delete an entry. The file is kept in versions/, so it can be restored. Returns false if there was none. */
 export async function deleteEntry(date: string): Promise<boolean> {
   const existing = await saveVersion(date);
-  if (existing) await rm(entryPath(date));
+  if (existing) {
+    await rm(entryPath(date));
+    for (const fn of listeners) fn(date);
+  }
   return !!existing;
 }
 

@@ -3,7 +3,7 @@ import { buildAgent, discoverAgents, renderPrompt } from "../src/agents/_engine/
 import { buildRouterPrompt, keywordFallback } from "../src/agents/_engine/router";
 import type { Agent } from "../src/agents/_engine/types";
 
-const ctx = { date: "2026-09-30", weekday: "Wednesday", time: "9:00 pm", name: "Tom" };
+const ctx = { date: "2026-09-30", weekday: "Wednesday", time: "9:00 pm", name: "Tom", language: "English", pronouns: "he/him", facts: "", threads: "", recalled: "", quiet: "" };
 
 describe("renderPrompt", () => {
   test("fills known placeholders and leaves unknown ones", () => {
@@ -60,7 +60,7 @@ describe("router", () => {
   const agents = [agent("reporter", []), agent("morgue", ["remember", "last time"]), agent("copydesk", ["headline"])];
 
   test("keyword fallback picks the single matching agent", () => {
-    expect(keywordFallback("when was the last time I saw Sam?", agents)).toBe("morgue");
+    expect(keywordFallback("when was the last time I saw John?", agents)).toBe("morgue");
   });
 
   test("keyword fallback gives up when several or none match", () => {

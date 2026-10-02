@@ -15,6 +15,8 @@ export function currentSettings(): Settings {
     paperName: config.paperName,
     dateline: config.dateline,
     dayCutoffHour: config.dayCutoffHour,
+    language: config.language,
+    pronouns: config.pronouns,
     models: { reporter: config.models.reporter, copydesk: config.models.copydesk, router: config.models.router },
   };
 }

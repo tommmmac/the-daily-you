@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const tabs = [
   { to: "/chat", label: "Chat" },
   { to: "/journal", label: "Journal" },
+  { to: "/memory", label: "Memory" },
 ];
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>

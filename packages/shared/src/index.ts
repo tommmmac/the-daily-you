@@ -137,6 +137,8 @@ export type Suggestion = z.infer<typeof Suggestion>;
 export type ChatEvent =
   | { event: "route"; data: { agent: string } }
   | { event: "token"; data: { text: string } }
+  /** Throw away the tokens so far: the reply slipped into another language and is being written again. */
+  | { event: "reset"; data: Record<string, never> }
   | { event: "done"; data: { agent: string } }
   /** Sent after `done`, only when there's something to offer. */
   | { event: "suggest"; data: Suggestion }
@@ -194,6 +196,10 @@ export const Settings = z.object({
   dateline: z.string().trim().min(1).max(40),
   /** Chats before this hour (0-12) count as the previous day. */
   dayCutoffHour: z.number().int().min(0).max(12),
+  /** What the Reporter chats in and the paper is written in, e.g. "English". */
+  language: z.string().trim().min(1).max(40),
+  /** How the paper refers to the diarist, e.g. "he/him", "she/her", "they/them". "" for not set (gender-neutral). */
+  pronouns: z.string().trim().max(30),
   models: ModelSettings,
 });
 export type Settings = z.infer<typeof Settings>;
@@ -203,6 +209,53 @@ export const SettingsPatch = Settings.omit({ models: true })
   .partial()
   .extend({ models: ModelSettings.partial().optional() });
 export type SettingsPatch = z.infer<typeof SettingsPatch>;
+
+/** GET /api/memory: the facts file (data/memory.md) */
+export const Memory = z.object({ text: z.string() });
+export type Memory = z.infer<typeof Memory>;
+
+/** PUT /api/memory */
+export const MemoryUpdate = z.object({ text: z.string().max(20_000) });
+export type MemoryUpdate = z.infer<typeof MemoryUpdate>;
+
+/** Result of saving or restoring the facts file. `undo` is the version to restore to undo it (null if it was new). */
+export const MemoryChange = Memory.extend({ undo: z.number().int().nullable() });
+export type MemoryChange = z.infer<typeof MemoryChange>;
+
+/**
+ * Something to follow up on later ("how did the exam go?"), picked up by the Archivist after a print.
+ * Saved in data/threads.json. The Reporter sees open ones once they're due.
+ */
+export const Thread = z.object({
+  id: z.string(),
+  text: z.string(),
+  /** When it makes sense to ask about it. */
+  due: DateStr,
+  /** "tender" for sad, stressful or private things, which the Reporter asks about gently. */
+  tone: z.enum(["light", "tender"]),
+  /** The diary day it came up. */
+  from: DateStr,
+  status: z.enum(["open", "resolved", "dismissed"]),
+});
+export type Thread = z.infer<typeof Thread>;
+
+/** PATCH /api/threads/:id */
+export const ThreadPatch = z.object({ status: z.enum(["resolved", "dismissed"]) });
+export type ThreadPatch = z.infer<typeof ThreadPatch>;
+
+/** What the Archivist changed after one print. GET /api/memory/log, newest first. */
+export const MemoryLogEntry = z.object({
+  at: z.string(),
+  /** The diary day that was printed. */
+  date: DateStr,
+  /** e.g. "Added: Works at a bar", "Updated: ...", "Removed: ..." */
+  facts: z.array(z.string()),
+  threadsAdded: z.array(z.string()),
+  threadsResolved: z.array(z.string()),
+  /** Facts file version to restore to undo the fact changes (null if facts didn't change or the file was new). */
+  undo: z.number().int().nullable(),
+});
+export type MemoryLogEntry = z.infer<typeof MemoryLogEntry>;
 
 /** GET /api/health */
 export const Health = z.object({

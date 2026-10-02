@@ -110,7 +110,7 @@ The router is `_engine/router.ts`, not a folder, because it chooses between agen
 ### Reporter
 
 - Conversational interviewer. Streams replies.
-- Context it gets now: the date, weekday, time, your name (if set), the facts file (`memory.md`), open threads that are due (up to 3), a past page worth bringing up (if recall found one), and the current chat.
+- Context it gets now: the date, weekday, time, your name (if set), the facts file (`memory.md`), open threads that are due (up to 3), a past page worth bringing up (if recall found one), up to 2 people or topics that have gone quiet, and the current chat.
 - When it opens a chat and something's due, it asks about one of them instead of a generic "how was your day".
 - Planned context: today's calendar events (Phase 4).
 - Aim: ask one good follow-up at a time, pick up on threads from past days ("Did the bike hold up?"), and know when there's enough for a story.
@@ -137,6 +137,8 @@ Runs are one at a time, so two quick prints can't both rewrite `memory.md`. Each
 2. **The pick** (`morgue/recall.ts`): after the Reporter replies, in the background, the last few things you said are embedded and compared to every earlier page. The 20 results are chosen with MMR (maximal marginal relevance), so they're relevant but not 15 copies of the same gym day. Each one is labelled "routine" (3+ near-identical days) or "one-off". Then the router model picks the one a friend would bring up, or none. Whatever it picks goes into the Reporter's prompt on the next turn, with how long ago it was worked out in code. At most one per chat. The pick lives in memory rather than the session file, so it can't clash with saving messages.
 
 `bun run eval:recall` checks this on a fake diary. See FINDINGS (2026-10-02) for what changed the numbers.
+
+**Patterns (built):** people and topics that used to come up a lot and have gone quiet ("haven't heard about John in a while"). `morgue/patterns.ts` counts each entry's `people` and `tags`, no model involved. Something counts as quiet when it was in at least 3 of the last 120 entries, and it's been missing for 4 times its usual gap (at least 5 entries and 10 days). Gaps are counted in entries, not days, so a fortnight off journaling doesn't make everyone look quiet. After 120 days it's dropped, since by then it's just over. The Reporter gets up to 2 (people first) with how long ago and the headline of the last page they were on, and is told it doesn't know *why* they've gone quiet. Worked out once and cached until an entry changes.
 
 ### Copy Desk
 

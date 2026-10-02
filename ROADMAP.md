@@ -52,8 +52,8 @@ Memory is there so the Reporter can ask better questions, not so you can search 
 - [x] **Backend:** embeddings in a SQLite index (plain `bun:sqlite`, rebuilt from `data/`)
 - [x] **Backend:** callbacks: recall a related past entry while you chat, picked by the model from the closest matches
 - [x] **Backend:** recall eval (`bun run eval:recall`)
-- [ ] **Backend:** patterns ("haven't heard about John in a while") from entry tags and people
-- [ ] **Backend:** label other agents' turns in each agent's history, so one agent doesn't treat another's replies as its own (see [FINDINGS](docs/FINDINGS.md), 2026-10-01)
+- [x] **Backend:** patterns ("haven't heard about John in a while") from entry tags and people
+- [x] **Backend:** label other agents' turns in each agent's history, so one agent doesn't treat another's replies as its own (see [FINDINGS](docs/FINDINGS.md), 2026-10-01)
 
 ## Phase 4: On the Beat (calendar)
 

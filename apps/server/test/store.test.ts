@@ -93,6 +93,27 @@ describe("sessions", () => {
   test("rejects ids that could escape the data folder", async () => {
     expect(await sessions.getSession("../../etc/passwd")).toBeNull();
   });
+
+  test("history only gives an agent its own replies as its own", async () => {
+    const s = await sessions.createSession("2026-10-01");
+    await sessions.addMessage(s, { role: "assistant", content: "How was the movie?" }); // untagged: the Reporter
+    await sessions.addMessage(s, { role: "user", content: "yeah the driving bit" });
+    await sessions.addMessage(s, { role: "assistant", content: "Done, page 1 updated." }, "copydesk");
+    await sessions.addMessage(s, { role: "user", content: "wat" });
+
+    const history = sessions.toHistory(s, "reporter");
+    expect(history[0]).toEqual({ role: "assistant", content: "How was the movie?" });
+    expect(history[1]).toEqual({ role: "user", content: "yeah the driving bit" });
+    expect(history[2]?.role).toBe("system");
+    expect(history[2]?.content).toContain("Copy Desk (another desk, not you)");
+    expect(history[2]?.content).toContain("Done, page 1 updated.");
+
+    // And the other way round: to the Copy Desk, the Reporter's question isn't its own.
+    const forCopyDesk = sessions.toHistory(s, "copydesk");
+    expect(forCopyDesk[0]?.role).toBe("system");
+    expect(forCopyDesk[0]?.content).toContain("Reporter (another desk, not you)");
+    expect(forCopyDesk[2]).toEqual({ role: "assistant", content: "Done, page 1 updated." });
+  });
 });
 
 describe("settings", () => {

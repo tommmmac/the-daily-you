@@ -16,6 +16,8 @@ export type PromptContext = {
   threads: string;
   /** A past diary page worth bringing up now, picked by morgue/recall.ts. Only filled in for chat turns. */
   recalled: string;
+  /** People and topics that used to come up a lot and have gone quiet, picked by morgue/patterns.ts. Only filled in for chat turns. */
+  quiet: string;
 };
 
 /**

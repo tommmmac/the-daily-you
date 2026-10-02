@@ -1,9 +1,10 @@
 import { z } from "zod";
-import type { Msg, Session } from "@daily-you/shared";
+import type { Session } from "@daily-you/shared";
 import { config } from "../../config";
 import { chat as llmChat, chatStream, type OllamaMessage } from "../../llm/ollama";
 import { weekdayOf } from "../../store/dates";
 import { factsForPrompt, readMemory } from "../../store/memory";
+import { formatQuiet, quietFor } from "../../morgue/patterns";
 import { formatRecalled, takeRecall } from "../../morgue/recall";
 import { dueThreads } from "../../store/threads";
 import { addMessage, toHistory } from "../../store/sessions";
@@ -24,6 +25,7 @@ const OPENER_WITH_THREADS =
 const NO_THREADS = "Nothing right now.";
 // The Reporter only asks about one, so don't crowd its prompt.
 const MAX_THREADS = 3;
+const MAX_QUIET = 2;
 
 export function promptContext(date: string): PromptContext {
   return {
@@ -36,12 +38,14 @@ export function promptContext(date: string): PromptContext {
     facts: "",
     threads: "",
     recalled: "",
+    quiet: "",
   };
 }
 
 /**
  * promptContext plus what the chat agents remember about the diarist. With a session id,
  * it also takes the past page recalled for that chat, if one is waiting (see morgue/recall.ts).
+ * A failure to work out patterns just leaves them out: they're never worth failing a chat over.
  */
 export async function chatContext(date: string, sessionId?: string): Promise<PromptContext> {
   const facts = factsForPrompt(await readMemory());
@@ -50,11 +54,16 @@ export async function chatContext(date: string, sessionId?: string): Promise<Pro
     .map((t) => `- ${t.text} (came up ${weekdayOf(t.from)} ${t.from})${t.tone === "tender" ? " [sensitive: ask gently]" : ""}`)
     .join("\n");
   const recalled = sessionId ? takeRecall(sessionId) : undefined;
+  const quiet = await quietFor(date).catch((e) => {
+    console.warn("patterns failed:", e);
+    return [];
+  });
   return {
     ...promptContext(date),
     facts: facts || "Nothing yet.",
     threads: threads || NO_THREADS,
     recalled: recalled ? formatRecalled(recalled, date) : "Nothing right now.",
+    quiet: formatQuiet(quiet.slice(0, MAX_QUIET), date) || "Nothing right now.",
   };
 }
 
@@ -64,7 +73,7 @@ export async function chatContext(date: string, sessionId?: string): Promise<Pro
  */
 export async function* runAgent(
   agent: Agent,
-  history: Msg[],
+  history: OllamaMessage[],
   ctx: PromptContext,
   temperature?: number,
 ): AsyncGenerator<string> {
@@ -150,7 +159,7 @@ export async function* chat(
   yield { type: "route", agent: agent.name };
 
   const ctx = await chatContext(session.date, session.id);
-  const history = toHistory(session);
+  const history = toHistory(session, agent.name);
   if (message) {
     await addMessage(session, { role: "user", content: message });
     history.push({ role: "user", content: message });

@@ -3,7 +3,7 @@ import { buildAgent, discoverAgents, renderPrompt } from "../src/agents/_engine/
 import { buildRouterPrompt, keywordFallback } from "../src/agents/_engine/router";
 import type { Agent } from "../src/agents/_engine/types";
 
-const ctx = { date: "2026-09-30", weekday: "Wednesday", time: "9:00 pm", name: "Tom", language: "English", pronouns: "he/him", facts: "", threads: "", recalled: "" };
+const ctx = { date: "2026-09-30", weekday: "Wednesday", time: "9:00 pm", name: "Tom", language: "English", pronouns: "he/him", facts: "", threads: "", recalled: "", quiet: "" };
 
 describe("renderPrompt", () => {
   test("fills known placeholders and leaves unknown ones", () => {

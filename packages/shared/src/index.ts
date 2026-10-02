@@ -11,11 +11,16 @@ export const Msg = z.object({
 });
 export type Msg = z.infer<typeof Msg>;
 
+/** One event from a calendar. All-day events have a plain date (YYYY-MM-DD) as `start` and `end`. */
 export const CalendarEvent = z.object({
   title: z.string(),
+  /** Local time with offset (2026-09-29T10:00:00+10:00), or a date for all-day events. */
   start: z.string(),
+  /** Exclusive for all-day events, like ICS: a one-day event on the 29th ends on the 30th. */
   end: z.string().optional(),
   location: z.string().optional(),
+  /** Which calendar it came from (its name in Settings). */
+  calendar: z.string().optional(),
 });
 export type CalendarEvent = z.infer<typeof CalendarEvent>;
 
@@ -186,6 +191,20 @@ export const ModelSettings = z.object({
 });
 export type ModelSettings = z.infer<typeof ModelSettings>;
 
+/** A calendar's ICS link, from Settings. */
+export const CalendarFeed = z.object({
+  name: z.string().trim().min(1).max(40),
+  /** The "secret address" in iCal format. webcal:// links work too. */
+  url: z
+    .string()
+    .trim()
+    .regex(/^(https?|webcal):\/\/\S+$/i, "Calendar links start with https:// or webcal://")
+    .max(2000),
+  /** Off keeps the link but leaves its events out. */
+  enabled: z.boolean(),
+});
+export type CalendarFeed = z.infer<typeof CalendarFeed>;
+
 /** GET /api/settings: the settings in use (saved ones, falling back to .env, then defaults). */
 export const Settings = z.object({
   /** The diarist's name, used in prompts. "" for none. */
@@ -200,6 +219,8 @@ export const Settings = z.object({
   language: z.string().trim().min(1).max(40),
   /** How the paper refers to the diarist, e.g. "he/him", "she/her", "they/them". "" for not set (gender-neutral). */
   pronouns: z.string().trim().max(30),
+  /** ICS links whose events the Reporter sees. */
+  calendars: z.array(CalendarFeed).max(20),
   models: ModelSettings,
 });
 export type Settings = z.infer<typeof Settings>;
@@ -209,6 +230,18 @@ export const SettingsPatch = Settings.omit({ models: true })
   .partial()
   .extend({ models: ModelSettings.partial().optional() });
 export type SettingsPatch = z.infer<typeof SettingsPatch>;
+
+/** GET /api/calendar/today: today's events from every enabled calendar, and the names of any that couldn't be read. */
+export const CalendarDay = z.object({ date: DateStr, events: z.array(CalendarEvent), failed: z.array(z.string()) });
+export type CalendarDay = z.infer<typeof CalendarDay>;
+
+/** POST /api/calendar/test */
+export const CalendarTestRequest = z.object({ url: CalendarFeed.shape.url });
+export type CalendarTestRequest = z.infer<typeof CalendarTestRequest>;
+
+/** The calendar's own name (if the file has one) and its events today, to check a link before saving it. */
+export const CalendarTest = z.object({ name: z.string().nullable(), events: z.array(CalendarEvent) });
+export type CalendarTest = z.infer<typeof CalendarTest>;
 
 /** GET /api/memory: the facts file (data/memory.md) */
 export const Memory = z.object({ text: z.string() });
@@ -272,7 +305,7 @@ export type Health = z.infer<typeof Health>;
 /** Non-2xx responses */
 export const ApiError = z.object({
   error: z.object({
-    code: z.enum(["not_found", "invalid_request", "llm_unavailable", "llm_bad_output", "unauthorized"]),
+    code: z.enum(["not_found", "invalid_request", "llm_unavailable", "llm_bad_output", "calendar_unavailable", "unauthorized"]),
     message: z.string(),
   }),
 });

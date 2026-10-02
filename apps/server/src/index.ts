@@ -5,6 +5,7 @@ import { AGENTS } from "./agents/_engine/registry";
 import { config } from "./config";
 import { listModels } from "./llm/ollama";
 import { queueSync } from "./morgue";
+import { calendarRoutes } from "./routes/calendar";
 import { chatRoutes } from "./routes/chat";
 import { entryRoutes } from "./routes/entries";
 import { memoryRoutes } from "./routes/memory";
@@ -33,6 +34,7 @@ app.get("/health", async (c) => {
   return c.json(body);
 });
 
+app.route("/", calendarRoutes);
 app.route("/", chatRoutes);
 app.route("/", entryRoutes);
 app.route("/", memoryRoutes);

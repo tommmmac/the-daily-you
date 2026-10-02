@@ -14,6 +14,7 @@
   "dependencies": {
     "@daily-you/shared": "workspace:*",
     "hono": "^4.13.12",
+    "ical.js": "^2.2.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {

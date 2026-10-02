@@ -53,6 +53,7 @@ The system prompt. These placeholders are filled in fresh for every message:
 | `{{facts}}` | The facts file (`data/memory.md`) without hints or empty sections. Chat agents only. |
 | `{{threads}}` | Open threads that are due, one per line. Chat agents only. |
 | `{{recalled}}` | A past page worth bringing up, picked after the previous turn (`morgue/recall.ts`). Chat agents only. |
+| `{{events}}` | The day's calendar events, one per line, or a note that there's no calendar (`calendar/ics.ts`). Chat agents only. |
 | `{{quiet}}` | People and topics that used to come up a lot and have gone quiet (`morgue/patterns.ts`). Chat agents only. |
 
 It uses double braces, so single braces in example JSON are safe.

@@ -12,7 +12,6 @@ export type Tool = {
   run: (args: any) => unknown | Promise<unknown>;
 };
 
-export const TOOLS: Record<string, Tool> = {
-  // recall: Phase 3 (The Morgue)
-  // todays_events: Phase 4 (calendar)
-};
+// None yet: memory and the calendar go straight into the prompt (see chatContext in
+// agents/_engine/run.ts), which small local models handle more reliably than tool calls.
+export const TOOLS: Record<string, Tool> = {};

@@ -1,6 +1,8 @@
 // Typed client for the Bun server. Shapes come from @daily-you/shared.
 import type {
   ApiError,
+  CalendarDay,
+  CalendarTest,
   ChangeResult,
   ChatEvent,
   Entry,
@@ -101,4 +103,6 @@ export const api = {
   getSettings: () => request<Settings>("/settings"),
   updateSettings: (patch: SettingsPatch) =>
     request<Settings>("/settings", { method: "PATCH", body: JSON.stringify(patch) }),
+  calendarToday: () => request<CalendarDay>("/calendar/today"),
+  testCalendar: (url: string) => post<CalendarTest>("/calendar/test", { url }),
 };

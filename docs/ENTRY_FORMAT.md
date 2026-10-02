@@ -1,6 +1,6 @@
 # Entry format
 
-> **Status:** in use since Phase 1. The schema is `EntryFrontmatter` in `packages/shared/src/index.ts`. `events` stays empty until the calendar lands (Phase 4).
+> **Status:** in use since Phase 1. The schema is `EntryFrontmatter` in `packages/shared/src/index.ts`. `events` is filled in from your calendars when you print (Phase 4).
 
 Each day is one Markdown file with YAML frontmatter:
 
@@ -79,7 +79,7 @@ updated: 2026-09-29T22:40:51+10:00
 | `mood` | int 1–10 | | Copy Desk | The average of the pages' moods, rounded. |
 | `tags` | string[] | | Copy Desk | Every page's tags. Lower-case, short. |
 | `people` | string[] | | Copy Desk | Every page's people. |
-| `events` | object[] | | server (Phase 4) | From the calendar: `title`, `start`, `end`, optional `location`. |
+| `events` | object[] | | server | The day's events from your calendars, written on each print: `title`, `start`, `end`, and optional `location` and `calendar` (its name in Settings). `start` is local time with offset, or a plain date for all-day events, whose `end` is the day after (exclusive). |
 | `sessions` | string[] | ✅ | server | Every chat session ID on any page. Transcripts live in `data/transcripts/<date>/`. |
 | `pages` | object[] | | server | One per page, in order: `headline`, `subhead`, `mood`, `tags`, `people`, and the `sessions` it was printed from. The day-level fields above are worked out from these. Entries from before pages existed don't have it, and their whole body counts as page 1. |
 | `version` | int | ✅ | server | Increments on every change (print, edit, delete). Old versions go in `data/versions/<date>/`. |

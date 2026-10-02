@@ -75,6 +75,10 @@ export const config = {
   get pronouns() {
     return saved().pronouns ?? process.env.PRONOUNS ?? "";
   },
+  /** ICS links from the Settings page. Only saved there, since the links are private. */
+  get calendars() {
+    return saved().calendars ?? [];
+  },
 };
 
 export type ModelRole = keyof typeof config.models;

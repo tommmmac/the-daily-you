@@ -4,13 +4,19 @@
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
+/* Styles for one paper only, e.g. tabloid:bg-primary. Only the nearest data-theme counts, so the
+   previews in Settings (one paper drawn inside another) don't pick up the outer paper's styles. */
+@custom-variant tabloid (&:is([data-theme="tabloid"] *):not([data-theme="tabloid"] [data-theme]:not([data-theme="tabloid"]) *));
+@custom-variant gazette (&:is([data-theme="gazette"] *):not([data-theme="gazette"] [data-theme]:not([data-theme="gazette"]) *));
+@custom-variant gossip (&:is([data-theme="gossip"] *):not([data-theme="gossip"] [data-theme]:not([data-theme="gossip"]) *));
+@custom-variant terminal (&:is([data-theme="terminal"] *):not([data-theme="terminal"] [data-theme]:not([data-theme="terminal"]) *));
 
 @theme inline {
     /* Bundled with @fontsource (see main.tsx), so nothing is fetched from the internet. */
-    /* Old Standard: 1800s newspaper type. Source Serif: easy to read in long columns. */
-    --font-masthead: "Old Standard TT", "Times New Roman", serif;
-    --font-headline: "Old Standard TT", "Times New Roman", serif;
-    --font-serif: "Source Serif 4 Variable", Georgia, serif;
+    /* Each paper picks its own type below. */
+    --font-masthead: var(--masthead-font);
+    --font-headline: var(--headline-font);
+    --font-serif: var(--body-font);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -36,93 +42,256 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-    --color-sidebar: var(--sidebar);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
+    /* The band the paper's name sits on. Transparent on the broadsheets. */
+    --color-masthead: var(--masthead);
+    --color-masthead-foreground: var(--masthead-foreground);
 }
 
-:root {
-    --radius: 0.625rem;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+/* Broadsheet: black ink on cream newsprint, 1800s type. The default, and the base every other paper
+   changes. [data-theme] too so the previews in Settings can show one paper inside another. */
+:root,
+[data-theme] {
+    --ui-font: var(--font-sans);
+    font-family: var(--ui-font);
+    text-shadow: none;
+    --masthead-font: "Old Standard TT", "Times New Roman", serif;
+    --headline-font: "Old Standard TT", "Times New Roman", serif;
+    --body-font: "Source Serif 4 Variable", Georgia, serif;
+    --radius: 0.25rem;
+    --background: oklch(0.972 0.013 85);
+    --foreground: oklch(0.2 0.012 60);
+    --card: oklch(0.985 0.009 85);
+    --card-foreground: oklch(0.2 0.012 60);
+    --popover: oklch(0.985 0.009 85);
+    --popover-foreground: oklch(0.2 0.012 60);
+    --primary: oklch(0.2 0.012 60);
+    --primary-foreground: oklch(0.972 0.013 85);
+    --secondary: oklch(0.935 0.016 85);
+    --secondary-foreground: oklch(0.2 0.012 60);
+    --muted: oklch(0.935 0.016 85);
+    --muted-foreground: oklch(0.47 0.02 60);
+    --accent: oklch(0.925 0.02 85);
+    --accent-foreground: oklch(0.2 0.012 60);
+    --destructive: oklch(0.5 0.19 27);
+    --border: oklch(0.85 0.022 80);
+    --input: oklch(0.82 0.022 80);
+    --ring: oklch(0.55 0.02 60);
+    --masthead: transparent;
+    --masthead-foreground: var(--foreground);
+}
+
+/* Tabloid: a red top, heavy condensed headlines, bright white paper. */
+[data-theme="tabloid"] {
+    --masthead-font: "Anton", Impact, "Arial Narrow", sans-serif;
+    --headline-font: "Anton", Impact, "Arial Narrow", sans-serif;
+    --radius: 0.125rem;
+    --background: oklch(0.99 0 0);
+    --foreground: oklch(0.16 0 0);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.16 0 0);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --popover-foreground: oklch(0.16 0 0);
+    --primary: oklch(0.52 0.21 27);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.95 0 0);
+    --secondary-foreground: oklch(0.16 0 0);
+    --muted: oklch(0.95 0 0);
+    --muted-foreground: oklch(0.45 0 0);
+    --accent: oklch(0.95 0.025 27);
+    --accent-foreground: oklch(0.16 0 0);
+    --destructive: oklch(0.42 0.17 27);
+    --border: oklch(0.87 0 0);
+    --input: oklch(0.84 0 0);
+    --ring: oklch(0.52 0.21 27);
+    --masthead: oklch(0.52 0.21 27);
+    --masthead-foreground: oklch(1 0 0);
 }
 
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+/* Night edition: the broadsheet, but warm off-white on charcoal. Also sets .dark on <html>. */
+[data-theme="night"] {
+    --background: oklch(0.19 0.008 70);
+    --foreground: oklch(0.91 0.016 85);
+    --card: oklch(0.23 0.008 70);
+    --card-foreground: oklch(0.91 0.016 85);
+    --popover: oklch(0.23 0.008 70);
+    --popover-foreground: oklch(0.91 0.016 85);
+    --primary: oklch(0.91 0.016 85);
+    --primary-foreground: oklch(0.19 0.008 70);
+    --secondary: oklch(0.27 0.008 70);
+    --secondary-foreground: oklch(0.91 0.016 85);
+    --muted: oklch(0.27 0.008 70);
+    --muted-foreground: oklch(0.7 0.016 80);
+    --accent: oklch(0.29 0.01 70);
+    --accent-foreground: oklch(0.91 0.016 85);
+    --destructive: oklch(0.68 0.17 25);
+    --border: oklch(0.91 0.016 85 / 14%);
+    --input: oklch(0.91 0.016 85 / 18%);
+    --ring: oklch(0.6 0.012 80);
+}
+
+/* Gazette: an 1890s paper gone yellow, with a blackletter masthead and small-caps headlines. */
+[data-theme="gazette"] {
+    --masthead-font: "UnifrakturCook", "Old English Text MT", serif;
+    --radius: 0;
+    --background: oklch(0.9 0.045 82);
+    --foreground: oklch(0.24 0.035 50);
+    --card: oklch(0.925 0.04 82);
+    --card-foreground: oklch(0.24 0.035 50);
+    --popover: oklch(0.925 0.04 82);
+    --popover-foreground: oklch(0.24 0.035 50);
+    --primary: oklch(0.24 0.035 50);
+    --primary-foreground: oklch(0.9 0.045 82);
+    --secondary: oklch(0.86 0.05 80);
+    --secondary-foreground: oklch(0.24 0.035 50);
+    --muted: oklch(0.86 0.05 80);
+    --muted-foreground: oklch(0.42 0.05 55);
+    --accent: oklch(0.84 0.055 78);
+    --accent-foreground: oklch(0.24 0.035 50);
+    --destructive: oklch(0.45 0.15 30);
+    --border: oklch(0.72 0.06 70);
+    --input: oklch(0.66 0.06 68);
+    --ring: oklch(0.5 0.06 55);
+}
+
+/* Gossip: hot pink and black, a big italic masthead, all-caps everything. */
+[data-theme="gossip"] {
+    --masthead-font: "Playfair Display", "Didot", serif;
+    --headline-font: "Anton", Impact, "Arial Narrow", sans-serif;
+    --radius: 0.5rem;
+    --background: oklch(0.985 0.012 350);
+    --foreground: oklch(0.15 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.15 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.15 0 0);
+    --primary: oklch(0.55 0.24 355);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.95 0.03 350);
+    --secondary-foreground: oklch(0.15 0 0);
+    --muted: oklch(0.95 0.03 350);
+    --muted-foreground: oklch(0.45 0.03 350);
+    --accent: oklch(0.93 0.05 350);
+    --accent-foreground: oklch(0.15 0 0);
+    --destructive: oklch(0.45 0.17 27);
+    --border: oklch(0.88 0.04 350);
+    --input: oklch(0.84 0.05 350);
+    --ring: oklch(0.55 0.24 355);
+    --masthead-foreground: oklch(0.55 0.24 355);
+}
+
+/* Newsroom terminal: a 1980s wire-service screen. Green phosphor on black, all monospace. Also sets .dark. */
+[data-theme="terminal"] {
+    --masthead-font: "VT323", ui-monospace, monospace;
+    --headline-font: "VT323", ui-monospace, monospace;
+    --body-font: "IBM Plex Mono", ui-monospace, monospace;
+    --radius: 0;
+    --background: oklch(0.16 0.015 155);
+    --foreground: oklch(0.86 0.19 145);
+    --card: oklch(0.2 0.02 155);
+    --card-foreground: oklch(0.86 0.19 145);
+    --popover: oklch(0.2 0.02 155);
+    --popover-foreground: oklch(0.86 0.19 145);
+    --primary: oklch(0.86 0.19 145);
+    --primary-foreground: oklch(0.16 0.015 155);
+    --secondary: oklch(0.24 0.03 150);
+    --secondary-foreground: oklch(0.86 0.19 145);
+    --muted: oklch(0.24 0.03 150);
+    --muted-foreground: oklch(0.68 0.12 145);
+    /* Warnings come up amber, like the wire's priority flashes. */
+    --destructive: oklch(0.8 0.16 75);
+    --accent: oklch(0.27 0.04 150);
+    --accent-foreground: oklch(0.86 0.19 145);
+    --border: oklch(0.86 0.19 145 / 30%);
+    --input: oklch(0.86 0.19 145 / 40%);
+    --ring: oklch(0.86 0.19 145);
+    --ui-font: var(--body-font);
+    font-family: var(--ui-font);
+    text-shadow: 0 0 0.35em oklch(0.86 0.19 145 / 0.35);
+}
+
+/* These fonts only come in one weight with no italic, so don't let the browser fake them.
+   Like the variants above, the :not() keeps each rule to its own paper when one is drawn inside another. */
+:is(.font-masthead, .font-headline):is([data-theme="tabloid"] *):not([data-theme="tabloid"] [data-theme]:not([data-theme="tabloid"]) *),
+:is(.font-masthead, .font-headline):is([data-theme="terminal"] *):not([data-theme="terminal"] [data-theme]:not([data-theme="terminal"]) *),
+.font-headline:is([data-theme="gossip"] *):not([data-theme="gossip"] [data-theme]:not([data-theme="gossip"]) *) {
+    font-weight: 400;
+    font-style: normal;
+}
+
+.font-headline:is([data-theme="gazette"] *):not([data-theme="gazette"] [data-theme]:not([data-theme="gazette"]) *) {
+    font-variant-caps: small-caps;
+}
+/* Aged at the edges. */
+[data-theme="gazette"] body {
+    background-image: radial-gradient(ellipse at center, transparent 55%, oklch(0.7 0.07 65 / 0.35));
+    background-attachment: fixed;
+}
+
+[data-theme="gossip"] .prose blockquote {
+    border-color: var(--primary);
+    color: var(--primary);
+    font-family: var(--masthead-font);
+    font-style: italic;
+    font-weight: 700;
+}
+[data-theme="gossip"] .prose blockquote::before {
+    content: "\201C";
+    display: block;
+    font-size: 3em;
+    line-height: 0.6;
+}
+
+/* Ragged right reads better in monospace than justified. */
+[data-theme="terminal"] .prose p {
+    text-align: left;
+}
+/* Faint scanlines over the whole screen. */
+[data-theme="terminal"] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    background: repeating-linear-gradient(transparent 0 2px, oklch(0 0 0 / 0.12) 2px 3px);
+}
+/* A cursor after the paper's name. */
+.font-masthead:is([data-theme="terminal"] *):not([data-theme="terminal"] [data-theme]:not([data-theme="terminal"]) *)::after {
+    content: "_";
+    animation: cursor-blink 1.1s steps(1) infinite;
+}
+@keyframes cursor-blink {
+    50% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .font-masthead:is([data-theme="terminal"] *):not([data-theme="terminal"] [data-theme]:not([data-theme="terminal"]) *)::after {
+        animation: none;
+    }
+}
+
+/* Story text follows the paper's ink rather than Tailwind Typography's own greys. */
+.prose {
+    --tw-prose-body: var(--foreground);
+    --tw-prose-headings: var(--foreground);
+    --tw-prose-lead: var(--foreground);
+    --tw-prose-bold: var(--foreground);
+    --tw-prose-links: var(--foreground);
+    --tw-prose-counters: var(--muted-foreground);
+    --tw-prose-bullets: var(--muted-foreground);
+    --tw-prose-hr: var(--border);
+    --tw-prose-quotes: var(--foreground);
+    --tw-prose-quote-borders: var(--foreground);
+    --tw-prose-captions: var(--muted-foreground);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    }
+  html {
+    color-scheme: light;
+    }
+  html.dark {
+    color-scheme: dark;
     }
   body {
     @apply bg-background text-foreground;
@@ -133,5 +302,8 @@
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]) {
     cursor: pointer;
+    }
+  ::selection {
+    @apply bg-primary text-primary-foreground;
     }
 }

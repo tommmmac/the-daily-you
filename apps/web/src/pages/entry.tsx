@@ -238,7 +238,7 @@ function Story({ markdown, front }: { markdown: string; front: boolean }) {
       )}
       <div
         className={cn(
-          "prose prose-stone max-w-none font-serif dark:prose-invert",
+          "prose max-w-none font-serif",
           // Two columns with a rule between them, like a broadsheet. One column on phones.
           "sm:columns-2 sm:gap-8 sm:[column-rule:1px_solid_var(--border)]",
           "prose-headings:font-headline prose-h2:mt-0 prose-h2:text-lg prose-h2:break-after-avoid",

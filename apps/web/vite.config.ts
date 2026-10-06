@@ -19,8 +19,8 @@ export default defineConfig({
         description: "A local AI diary that prints your day as a newspaper.",
         display: "standalone",
         start_url: "/chat",
-        background_color: "#ffffff",
-        theme_color: "#ffffff",
+        background_color: "#f7f3ea",
+        theme_color: "#f7f3ea",
         icons: [
           { src: "pwa-64x64.png", sizes: "64x64", type: "image/png" },
           { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },

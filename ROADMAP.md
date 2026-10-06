@@ -74,7 +74,7 @@ Memory is there so the Reporter can ask better questions, not so you can search 
 
 Open-ended: keep going through the app and fixing what bugs me until I'm happy with how it looks and feels.
 
-- [ ] **Frontend:** themes: broadsheet, tabloid, dark mode, picked in Settings
+- [x] **Frontend:** themes: broadsheet, tabloid, night edition (or automatic), gazette, gossip, newsroom terminal, picked in Settings per device
 - [ ] **Frontend:** a pass over every page (Chat, Journal, an entry, Memory, Settings, sign-in) on the PC and on a phone, noting what feels off
 - [ ] **Frontend:** fix that list, one page at a time
 

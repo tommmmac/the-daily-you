@@ -25,7 +25,7 @@ export function LoginPage({ passphraseSet, onSignedIn }: { passphraseSet: boolea
   return (
     <div className="mx-auto flex min-h-svh max-w-sm flex-col justify-center gap-6 px-4 py-10 text-center">
       <header>
-        <h1 className="border-b-4 border-double border-foreground pb-2 font-masthead text-4xl font-bold uppercase leading-none tracking-wide">
+        <h1 className="border-b-4 border-double border-foreground bg-masthead pb-2 font-masthead text-4xl font-bold uppercase leading-none tracking-wide text-masthead-foreground tabloid:border-0 tabloid:py-3 tabloid:tracking-normal gazette:normal-case gazette:tracking-normal gossip:font-black gossip:italic gossip:tracking-tight">
           The Daily You
         </h1>
         <p className="pt-2 font-headline text-sm italic">Subscribers only</p>

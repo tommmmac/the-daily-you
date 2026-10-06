@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import type { CalendarFeed, Settings } from "@daily-you/shared";
+import { ThemePicker } from "@/components/theme-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
@@ -176,6 +177,10 @@ export function SettingsPage() {
       </form>
 
       {/* These apply straight away, so they sit outside the Save form. */}
+      <Section title="The look">
+        <p className="text-sm text-muted-foreground">Which paper you read. Just for this device.</p>
+        <ThemePicker />
+      </Section>
       <Section title="The app">
         <InstallApp />
       </Section>

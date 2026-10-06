@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "bun --filter \"./apps/*\" dev",
     "build": "bun --filter \"./apps/*\" build",
+    "start": "bun --filter \"./apps/server\" start",
     "typecheck": "bun --filter \"*\" typecheck",
     "test": "bun --filter \"./apps/server\" test",
+    "autostart": "bun --env-file=.env apps/server/scripts/autostart.ts",
     "wipe": "bun --env-file=.env apps/server/scripts/wipe.ts"
   }
 }

@@ -15,10 +15,12 @@
     "@daily-you/shared": "workspace:*",
     "hono": "^4.13.12",
     "ical.js": "^2.2.1",
+    "web-push": "^3.6.7",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
+    "@types/web-push": "^3.6.4",
     "typescript": "^7.0.2"
   }
 }

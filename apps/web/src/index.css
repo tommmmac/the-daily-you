@@ -126,6 +126,8 @@
     }
   body {
     @apply bg-background text-foreground;
+    /* Keep clear of the notch and home bar when installed on a phone. */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
   /* Tailwind v4 dropped the pointer cursor on buttons; bring it back everywhere. */
   button:not(:disabled),

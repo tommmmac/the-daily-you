@@ -1,6 +1,8 @@
 // Typed client for the Bun server. Shapes come from @daily-you/shared.
 import type {
   ApiError,
+  AuthStatus,
+  PushKey,
   CalendarDay,
   CalendarTest,
   ChangeResult,
@@ -29,6 +31,9 @@ export class ApiRequestError extends Error {
   }
 }
 
+/** Fired on window when the server says this device isn't signed in. */
+export const SIGNED_OUT = "dailyyou:signed-out";
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
     ...init,
@@ -36,6 +41,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as ApiError | null;
+    // Signed out (from another device, or the passphrase changed): show the sign-in page.
+    if (res.status === 401 && !path.startsWith("/auth")) window.dispatchEvent(new Event(SIGNED_OUT));
     throw new ApiRequestError(body?.error.message ?? `${res.status} ${path}`, res.status, body?.error.code);
   }
   return res.json() as Promise<T>;
@@ -58,6 +65,7 @@ async function* chat(sessionId: string, message?: string, signal?: AbortSignal):
   });
   if (!res.ok || !res.body) {
     const body = (await res.json().catch(() => null)) as ApiError | null;
+    if (res.status === 401) window.dispatchEvent(new Event(SIGNED_OUT));
     throw new ApiRequestError(body?.error.message ?? `${res.status} /chat`, res.status, body?.error.code);
   }
 
@@ -105,4 +113,15 @@ export const api = {
     request<Settings>("/settings", { method: "PATCH", body: JSON.stringify(patch) }),
   calendarToday: () => request<CalendarDay>("/calendar/today"),
   testCalendar: (url: string) => post<CalendarTest>("/calendar/test", { url }),
+  auth: () => request<AuthStatus>("/auth"),
+  login: (passphrase: string) => post<{ ok: true }>("/auth/login", { passphrase }),
+  logout: () => post<{ ok: true }>("/auth/logout", {}),
+  setPassphrase: (passphrase: string) =>
+    request<{ ok: true }>("/auth/passphrase", { method: "PUT", body: JSON.stringify({ passphrase }) }),
+  clearPassphrase: () => del<{ ok: true }>("/auth/passphrase"),
+  signOutEverywhere: () => del<{ ok: true }>("/auth/sessions"),
+  pushKey: () => request<PushKey>("/push/key"),
+  pushSubscribe: (subscription: PushSubscriptionJSON) => post<{ ok: true }>("/push/subscribe", subscription),
+  pushUnsubscribe: (endpoint: string) => post<{ ok: true }>("/push/unsubscribe", { endpoint }),
+  pushTest: (endpoint: string) => post<{ ok: true }>("/push/test", { endpoint }),
 };

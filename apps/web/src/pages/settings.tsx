@@ -4,8 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { useSettings } from "@/lib/settings";
+import { InstallApp, PhoneAccess, ReminderDevice } from "@/pages/settings-devices";
 
 const hourLabel = (h: number) => (h === 0 ? "Midnight" : h === 12 ? "Noon" : `${h}am`);
+
+// Every half hour from 5pm to 2am.
+const REMINDER_TIMES = Array.from({ length: 19 }, (_, i) => {
+  const minutes = (17 * 60 + i * 30) % (24 * 60);
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${minutes % 60 ? "30" : "00"}`;
+});
+const timeLabel = (hhmm: string) =>
+  new Date(`2000-01-01T${hhmm}:00`).toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" });
 
 // Who the paper is for and how it's made. Saved to data/settings.json.
 export function SettingsPage() {
@@ -53,103 +62,127 @@ export function SettingsPage() {
   const suggestion = firstName ? `The ${firstName} Times` : null;
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-6">
-      <h2 className="font-headline text-2xl font-bold">Settings</h2>
+    <div className="flex flex-col gap-6">
+      <form onSubmit={submit} className="flex flex-col gap-6">
+        <h2 className="font-headline text-2xl font-bold">Settings</h2>
 
-      <Section title="The paper">
-        <Field label="Your name" hint="The Reporter calls you this. Leave blank to stay anonymous.">
-          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Tom" maxLength={60} />
-        </Field>
-        <Field label="Pronouns" hint="How the paper writes about you, e.g. Local Man or Local Woman. Not set keeps it gender-neutral.">
-          <PronounsSelect value={form.pronouns} onChange={(v) => set("pronouns", v)} />
-        </Field>
-        <Field
-          label="Paper name"
-          hint={
-            <>
-              Shown in the masthead.
-              {suggestion && form.paperName !== suggestion && (
-                <>
-                  {" "}
-                  How about{" "}
-                  <button
-                    type="button"
-                    className="font-medium text-foreground underline underline-offset-2 hover:no-underline"
-                    onClick={() => set("paperName", suggestion)}
-                  >
-                    {suggestion}
-                  </button>
-                  ?
-                </>
-              )}
-            </>
-          }
-        >
-          <Input value={form.paperName} onChange={(e) => set("paperName", e.target.value)} maxLength={60} required />
-        </Field>
-        <Field label="Dateline" hint="Where you are, printed before each story.">
-          <Input
-            value={form.dateline}
-            onChange={(e) => set("dateline", e.target.value)}
-            placeholder="e.g. MELBOURNE"
-            className="uppercase"
-            maxLength={40}
-            required
-          />
-        </Field>
-        <Field label="Language" hint="The Reporter chats in this and the paper is printed in it. Any language your model knows.">
-          <Input
-            value={form.language}
-            onChange={(e) => set("language", e.target.value)}
-            placeholder="e.g. English"
-            list="languages"
-            maxLength={40}
-            required
-          />
-          <datalist id="languages">
-            {["English", "Spanish", "French", "German", "Italian", "Portuguese", "Chinese", "Japanese", "Korean", "Vietnamese", "Hindi", "Indonesian"].map((l) => (
-              <option key={l} value={l} />
-            ))}
-          </datalist>
-        </Field>
-        <Field label="New day starts at" hint="Chats before this time count as the day before, for late nights.">
-          <Select value={form.dayCutoffHour} onChange={(v) => set("dayCutoffHour", Number(v))}>
-            {Array.from({ length: 13 }, (_, h) => (
-              <option key={h} value={h}>
-                {hourLabel(h)}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <Section title="The paper">
+          <Field label="Your name" hint="The Reporter calls you this. Leave blank to stay anonymous.">
+            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Tom" maxLength={60} />
+          </Field>
+          <Field label="Pronouns" hint="How the paper writes about you, e.g. Local Man or Local Woman. Not set keeps it gender-neutral.">
+            <PronounsSelect value={form.pronouns} onChange={(v) => set("pronouns", v)} />
+          </Field>
+          <Field
+            label="Paper name"
+            hint={
+              <>
+                Shown in the masthead.
+                {suggestion && form.paperName !== suggestion && (
+                  <>
+                    {" "}
+                    How about{" "}
+                    <button
+                      type="button"
+                      className="font-medium text-foreground underline underline-offset-2 hover:no-underline"
+                      onClick={() => set("paperName", suggestion)}
+                    >
+                      {suggestion}
+                    </button>
+                    ?
+                  </>
+                )}
+              </>
+            }
+          >
+            <Input value={form.paperName} onChange={(e) => set("paperName", e.target.value)} maxLength={60} required />
+          </Field>
+          <Field label="Dateline" hint="Where you are, printed before each story.">
+            <Input
+              value={form.dateline}
+              onChange={(e) => set("dateline", e.target.value)}
+              placeholder="e.g. MELBOURNE"
+              className="uppercase"
+              maxLength={40}
+              required
+            />
+          </Field>
+          <Field label="Language" hint="The Reporter chats in this and the paper is printed in it. Any language your model knows.">
+            <Input
+              value={form.language}
+              onChange={(e) => set("language", e.target.value)}
+              placeholder="e.g. English"
+              list="languages"
+              maxLength={40}
+              required
+            />
+            <datalist id="languages">
+              {["English", "Spanish", "French", "German", "Italian", "Portuguese", "Chinese", "Japanese", "Korean", "Vietnamese", "Hindi", "Indonesian"].map((l) => (
+                <option key={l} value={l} />
+              ))}
+            </datalist>
+          </Field>
+          <Field label="New day starts at" hint="Chats before this time count as the day before, for late nights.">
+            <Select value={form.dayCutoffHour} onChange={(v) => set("dayCutoffHour", Number(v))}>
+              {Array.from({ length: 13 }, (_, h) => (
+                <option key={h} value={h}>
+                  {hourLabel(h)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </Section>
+
+        <Section title="Calendars">
+          <CalendarSettings calendars={form.calendars} onChange={(v) => set("calendars", v)} />
+        </Section>
+
+        <Section title="Reminder">
+          <Field label="Remind me at" hint="A notification if nothing's been printed that day yet. Your computer needs to be on.">
+            <Select value={form.reminderTime ?? ""} onChange={(v) => set("reminderTime", v || null)}>
+              <option value="">No reminder</option>
+              {[...new Set([...(form.reminderTime ? [form.reminderTime] : []), ...REMINDER_TIMES])].map((t) => (
+                <option key={t} value={t}>
+                  {timeLabel(t)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <ReminderDevice time={settings?.reminderTime ?? null} />
+        </Section>
+
+        <Section title="Models">
+          {installed === null && (
+            <p className="text-sm text-muted-foreground">Can't reach Ollama, so the installed models can't be listed.</p>
+          )}
+          <Field label="Reporter" hint="Chats with you. Faster is better here.">
+            <ModelSelect value={form.models.reporter} installed={installed} onChange={(v) => setModel("reporter", v)} />
+          </Field>
+          <Field label="Copy Desk" hint="Writes and edits the pages. Better writing is worth waiting for.">
+            <ModelSelect value={form.models.copydesk} installed={installed} onChange={(v) => setModel("copydesk", v)} />
+          </Field>
+        </Section>
+
+        <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t bg-background py-3">
+          {status && (
+            <span className={status.kind === "error" ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>
+              {status.message}
+            </span>
+          )}
+          <Button type="submit" disabled={saving || !changed}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </form>
+
+      {/* These apply straight away, so they sit outside the Save form. */}
+      <Section title="The app">
+        <InstallApp />
       </Section>
-
-      <Section title="Calendars">
-        <CalendarSettings calendars={form.calendars} onChange={(v) => set("calendars", v)} />
+      <Section title="Phone access">
+        <PhoneAccess />
       </Section>
-
-      <Section title="Models">
-        {installed === null && (
-          <p className="text-sm text-muted-foreground">Can't reach Ollama, so the installed models can't be listed.</p>
-        )}
-        <Field label="Reporter" hint="Chats with you. Faster is better here.">
-          <ModelSelect value={form.models.reporter} installed={installed} onChange={(v) => setModel("reporter", v)} />
-        </Field>
-        <Field label="Copy Desk" hint="Writes and edits the pages. Better writing is worth waiting for.">
-          <ModelSelect value={form.models.copydesk} installed={installed} onChange={(v) => setModel("copydesk", v)} />
-        </Field>
-      </Section>
-
-      <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t bg-background py-3">
-        {status && (
-          <span className={status.kind === "error" ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>
-            {status.message}
-          </span>
-        )}
-        <Button type="submit" disabled={saving || !changed}>
-          {saving ? "Saving…" : "Save"}
-        </Button>
-      </div>
-    </form>
+    </div>
   );
 }
 
@@ -179,7 +212,7 @@ function Select({ value, onChange, children }: { value: string | number; onChang
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors hover:border-foreground/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-base shadow-xs outline-none transition-colors md:text-sm hover:border-foreground/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       {children}
     </select>

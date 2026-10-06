@@ -1,6 +1,6 @@
 # Roadmap
 
-Seven phases. Tasks are tagged **Frontend**, **Backend** or **Shared** (both sides depend on it). Phase 1 is the MVP, and everything after builds on it.
+Eight phases. Tasks are tagged **Frontend**, **Backend** or **Shared** (both sides depend on it). Phase 1 is the MVP, and everything after builds on it.
 
 Tick items off here as they land. For bigger items, open a GitHub issue and link it.
 
@@ -64,12 +64,23 @@ Memory is there so the Reporter can ask better questions, not so you can search 
 
 ## Phase 5: Home Delivery (mobile)
 
-- [ ] **Frontend:** PWA setup (`vite-plugin-pwa`), mobile layout
-- [ ] **Backend:** login/auth
-- [ ] **Backend:** Tailscale setup guide
-- [ ] **Backend:** nightly push reminder
+- [x] **Frontend:** PWA setup (`vite-plugin-pwa`), mobile layout
+- [x] **Backend:** the server serves the built app, so it's one address, and `bun run autostart` starts it on Windows login
+- [x] **Backend:** login/auth
+- [x] **Backend:** Tailscale setup guide → [docs/PHONE.md](docs/PHONE.md)
+- [x] **Backend:** nightly push reminder
 
-## Phase 6: Special Features
+## Phase 6: New Look (UI rework)
+
+Open-ended: keep going through the app and fixing what bugs me until I'm happy with how it looks and feels.
+
+- [ ] **Frontend:** themes: broadsheet, tabloid, dark mode, picked in Settings
+- [ ] **Frontend:** a pass over every page (Chat, Journal, an entry, Memory, Settings, sign-in) on the PC and on a phone, noting what feels off
+- [ ] **Frontend:** fix that list, one page at a time
+
+**Done when:** I stop finding things I want to change.
+
+## Phase 7: Special Features
 
 Pick and choose. No particular order.
 
@@ -80,9 +91,8 @@ Pick and choose. No particular order.
 - [ ] Photos in entries
 - [ ] Print edition: export a month or year as a PDF newspaper
 - [ ] Cloud model option (Claude/OpenAI API key)
-- [ ] Themes: broadsheet, tabloid, dark mode
 
-## Phase 7: Go to Press (release)
+## Phase 8: Go to Press (release)
 
 - [ ] README + install script (or Dockerfile)
 - [ ] A few tests

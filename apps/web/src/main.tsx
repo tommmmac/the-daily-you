@@ -7,6 +7,8 @@ import "@fontsource/old-standard-tt/700.css";
 import "@fontsource-variable/source-serif-4/wght.css";
 import "@fontsource-variable/source-serif-4/wght-italic.css";
 import { Layout } from "@/components/layout";
+import { AuthGate } from "@/lib/auth";
+import "@/lib/install";
 import { SettingsProvider } from "@/lib/settings";
 import { ChatPage } from "@/pages/chat";
 import { EntryPage } from "@/pages/entry";
@@ -17,19 +19,21 @@ import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <SettingsProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route index element={<Navigate to="/chat" replace />} />
-            <Route path="chat" element={<ChatPage />} />
-            <Route path="journal" element={<JournalPage />} />
-            <Route path="journal/:date" element={<EntryPage />} />
-            <Route path="memory" element={<MemoryPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </SettingsProvider>
+    <AuthGate>
+      <SettingsProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route index element={<Navigate to="/chat" replace />} />
+              <Route path="chat" element={<ChatPage />} />
+              <Route path="journal" element={<JournalPage />} />
+              <Route path="journal/:date" element={<EntryPage />} />
+              <Route path="memory" element={<MemoryPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </SettingsProvider>
+    </AuthGate>
   </StrictMode>,
 );

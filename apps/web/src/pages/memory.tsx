@@ -102,7 +102,7 @@ export function MemoryPage() {
             setText(e.target.value);
             setUndo(null);
           }}
-          className="min-h-80 font-mono text-sm md:text-sm"
+          className="min-h-80 font-mono text-base md:text-sm"
           spellCheck
           aria-label="Facts file"
         />

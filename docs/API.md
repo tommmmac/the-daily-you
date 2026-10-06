@@ -1,6 +1,6 @@
 # API
 
-> **Status:** the routes for Phases 0 to 4 are built. Anything marked *planned* may change. Request and response shapes live as zod schemas in `packages/shared`, which is the source of truth.
+> **Status:** the routes for Phases 0 to 5 are built. Anything marked *planned* may change. Request and response shapes live as zod schemas in `packages/shared`, which is the source of truth.
 
 All routes are under `/api`. JSON in and out, unless noted. Streaming uses Server-Sent Events.
 
@@ -71,19 +71,28 @@ Print can take a while on a local model: about 10s once the model is loaded, and
 
 | Method | Route | Phase | Description |
 | --- | --- | --- | --- |
-| `GET` | `/api/settings` | 2 | The settings in use: `{ name, paperName, dateline, dayCutoffHour, language, pronouns, calendars: [{ name, url, enabled }], models: { reporter, copydesk, router } }`. Saved values win, then `.env`, then defaults. |
+| `GET` | `/api/settings` | 2 | The settings in use: `{ name, paperName, dateline, dayCutoffHour, language, pronouns, calendars: [{ name, url, enabled }], reminderTime, models: { reporter, copydesk, router } }`. `reminderTime` is `"21:00"`, or `null` for no reminder. Saved values win, then `.env`, then defaults. |
 | `PATCH` | `/api/settings` | 2 | Any of those fields (models can be partial, `calendars` replaces the whole list). Saved to `data/settings.json`. Returns the settings in use. |
 | `GET` | `/api/calendar/today` | 4 | `{ date, events, failed }`: today's events from every enabled calendar, and the names of any that couldn't be read. |
 | `POST` | `/api/calendar/test` | 4 | `{ url }` → `{ name, events }`: the calendar's own name (or `null`) and its events today. `502 calendar_unavailable` with the reason if it can't be read. |
 
-## Auth (Phase 5)
+## Sign-in and reminders
 
-| Method | Route | Description |
-| --- | --- | --- |
-| `POST` | `/api/auth/setup` | First run: set a passphrase. |
-| `POST` | `/api/auth/login` | `{ passphrase }` → sets a session cookie. |
-| `POST` | `/api/auth/logout` | |
+The computer the server runs on is always let in. Anything else (a phone through `tailscale serve`) needs the `dy_session` cookie from `POST /api/auth/login`, or gets `401 unauthorized` on every route except `/api/auth*`. How "the computer" is worked out is in [ARCHITECTURE.md](ARCHITECTURE.md#app-phones-and-sign-in-phase-5-built).
+
+| Method | Route | Phase | Description |
+| --- | --- | --- | --- |
+| `GET` | `/api/auth` | 5 | `{ local, signedIn, passphraseSet, devices: [{ id, device, created, lastSeen, current }] }`. `devices` is empty unless signed in. |
+| `POST` | `/api/auth/login` | 5 | `{ passphrase }` → sets the session cookie. `401` if it's wrong, `403 forbidden` if no passphrase is set, `429 too_many_attempts` after 5 wrong tries in 15 minutes. |
+| `POST` | `/api/auth/logout` | 5 | Signs this device out. |
+| `PUT` | `/api/auth/passphrase` | 5 | Computer only. `{ passphrase }` (8+ characters). Sets or changes it, and signs every device out. |
+| `DELETE` | `/api/auth/passphrase` | 5 | Computer only. Turns phone access off. |
+| `DELETE` | `/api/auth/sessions` | 5 | Computer only. Signs every device out. |
+| `GET` | `/api/push/key` | 5 | `{ publicKey }`: what the browser needs to subscribe. |
+| `POST` | `/api/push/subscribe` | 5 | A `PushSubscription.toJSON()`. This device gets the reminder. |
+| `POST` | `/api/push/unsubscribe` | 5 | `{ endpoint }` |
+| `POST` | `/api/push/test` | 5 | `{ endpoint }`: sends the reminder to that device now. |
 
 ## Errors
 
-Non-2xx responses return `{ error: { code, message } }`. Codes include `not_found`, `invalid_request`, `llm_unavailable`, `llm_bad_output`, `calendar_unavailable`, and `unauthorized`.
+Non-2xx responses return `{ error: { code, message } }`. Codes include `not_found`, `invalid_request`, `llm_unavailable`, `llm_bad_output`, `calendar_unavailable`, `unauthorized`, `forbidden` (only the computer can do that) and `too_many_attempts`.

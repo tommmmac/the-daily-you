@@ -64,17 +64,13 @@ Each agent is a folder under `apps/server/src/agents/` with a prompt and a small
 | --- | --- |
 | Reporter | Interviews you about your day. It's the default for any chat message. |
 | Copy Desk | Turns a chat into a page of the entry when you hit print, and rewrites a page when you press Edit. It never answers in chat. |
-| Archivist | After each print, works out what the paper should remember: lasting facts for the facts file, and things to ask about later. Runs in the background. |
 
 There's also a router (the "Editor-in-Chief") that picks an agent for each chat message, with a keyword fallback if the model call fails. Right now the Reporter is the only agent it can route to, so it just skips that model call. It also checks whether a message sounds like you want to print or edit, and if so shows a button for it in the chat. It never prints or edits by itself.
 
-The Reporter also reads a facts file (`data/memory.md`): where you work, who your friends are, what you're up to. So "went to work today" gets "the bar or the cafe?" instead of "what do you do?". The Archivist keeps it up to date after each print, and you can edit or undo anything on the Memory page.
+Planned, not built yet:
 
-It also remembers things to follow up on. Mention your exam is on Tuesday, and when you open the app on Wednesday the Reporter asks how it went.
-
-And it can bring up past days while you chat. Say you're going bouldering tonight, and if you rolled your ankle bouldering a few weeks ago, the Reporter might ask how the ankle's holding up. Every printed page is indexed by meaning (embeddings in SQLite), and after each reply a model looks at the closest past pages and picks one worth mentioning, or none.
-
-Paste your calendar's private iCal link in Settings and the Reporter sees what was on today, so "went to uni" gets "how was the FIT2004 lecture this morning?". The events are saved with the day's entry too. Works with Google Calendar, iCloud and Outlook.
+- The Morgue: memory. Search over past entries and a facts file (people, projects, goals), so the Reporter can ask about things you mentioned before.
+- Calendar: feed your events into the Reporter so it has something to ask about.
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [Roadmap](ROADMAP.md).
 
@@ -91,7 +87,6 @@ You'll need:
 
 - [Bun](https://bun.sh) 1.x
 - [Ollama](https://ollama.com) with a chat model pulled. The default is `qwen2.5:14b` (`ollama pull qwen2.5:14b`), but you can pick any installed model on the Settings page
-- An embedding model for remembering past days: `ollama pull nomic-embed-text` (about 270MB). Without it everything else still works, the Reporter just won't bring up old entries
 
 ```bash
 git clone https://github.com/tommmmac/the-daily-you.git
@@ -102,11 +97,7 @@ bun run dev
 
 Then open http://localhost:5173. The server runs on port 3000 and Vite forwards `/api` requests to it. Your diary is saved in `data/`.
 
-The Language setting picks what the Reporter chats in and the paper is printed in (default English). Pronouns set how the paper writes about you: he/him gets "Local Man", she/her gets "Local Woman", and anything else, or not setting it, keeps it gender-neutral ("Local Resident").
-
 Settings live in `data/settings.json`. You can also set defaults in `.env` (see `.env.example`), and anything saved on the Settings page wins over those.
-
-To check how well recall works after changing it, `bun run eval:recall` (in `apps/server`, needs Ollama) builds a fake diary of about 300 days and reports how often the right past day gets brought up, and how often it rightly stays quiet.
 
 To start fresh while testing, `bun run wipe` deletes everything in `data/`. It asks you to type "wipe" first, or you can skip that with `bun run wipe --yes`.
 
@@ -114,7 +105,7 @@ To start fresh while testing, `bun run wipe` deletes everything in `data/`. It a
 
 - [ROADMAP.md](ROADMAP.md): phases, tasks and open questions
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the pieces fit together
-- [docs/ENTRY_FORMAT.md](docs/ENTRY_FORMAT.md): the entry file format (draft)
+- [docs/ENTRY_FORMAT.md](docs/ENTRY_FORMAT.md): the entry file format (draft)le
 - [docs/API.md](docs/API.md): API routes (draft)
 - [docs/FINDINGS.md](docs/FINDINGS.md): what I've learned so far
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to work on it

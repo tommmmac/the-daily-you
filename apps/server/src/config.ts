@@ -79,6 +79,10 @@ export const config = {
   get calendars() {
     return saved().calendars ?? [];
   },
+  /** "21:00", or null for no nightly reminder. Off until it's set in Settings. */
+  get reminderTime() {
+    return saved().reminderTime ?? null;
+  },
 };
 
 export type ModelRole = keyof typeof config.models;

@@ -221,6 +221,11 @@ export const Settings = z.object({
   pronouns: z.string().trim().max(30),
   /** ICS links whose events the Reporter sees. */
   calendars: z.array(CalendarFeed).max(20),
+  /** "21:00": when to remind you if nothing's printed yet today. null for no reminder. */
+  reminderTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "A time like 21:00")
+    .nullable(),
   models: ModelSettings,
 });
 export type Settings = z.infer<typeof Settings>;
@@ -302,10 +307,66 @@ export const Health = z.object({
 });
 export type Health = z.infer<typeof Health>;
 
+/** A phone or browser that's signed in. */
+export const AuthDevice = z.object({
+  /** Short id, safe to show. Not the session token. */
+  id: z.string(),
+  /** e.g. "iPhone", "Android", "Windows" */
+  device: z.string(),
+  created: z.string(),
+  lastSeen: z.string(),
+  /** The device asking. */
+  current: z.boolean(),
+});
+export type AuthDevice = z.infer<typeof AuthDevice>;
+
+/**
+ * GET /api/auth. The computer the server runs on never needs to sign in. Other devices
+ * (a phone through Tailscale) sign in with a passphrase, once it's set on the computer.
+ */
+export const AuthStatus = z.object({
+  /** This request comes from the computer itself. */
+  local: z.boolean(),
+  /** Allowed in: local, or signed in. */
+  signedIn: z.boolean(),
+  passphraseSet: z.boolean(),
+  /** Signed-in devices. Empty unless signed in. */
+  devices: z.array(AuthDevice),
+});
+export type AuthStatus = z.infer<typeof AuthStatus>;
+
+/** POST /api/auth/login */
+export const LoginRequest = z.object({ passphrase: z.string().min(1).max(200) });
+export type LoginRequest = z.infer<typeof LoginRequest>;
+
+/** PUT /api/auth/passphrase (from the computer only). Signs every device out. */
+export const PassphraseRequest = z.object({ passphrase: z.string().min(8, "Use at least 8 characters").max(200) });
+export type PassphraseRequest = z.infer<typeof PassphraseRequest>;
+
+/** A browser's push subscription, as PushSubscription.toJSON() gives it. */
+export const PushSubscriptionInfo = z.object({
+  endpoint: z.string().url().max(2000),
+  keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }),
+});
+export type PushSubscriptionInfo = z.infer<typeof PushSubscriptionInfo>;
+
+/** GET /api/push/key: the server's public key, which the browser needs to subscribe. */
+export const PushKey = z.object({ publicKey: z.string() });
+export type PushKey = z.infer<typeof PushKey>;
+
 /** Non-2xx responses */
 export const ApiError = z.object({
   error: z.object({
-    code: z.enum(["not_found", "invalid_request", "llm_unavailable", "llm_bad_output", "calendar_unavailable", "unauthorized"]),
+    code: z.enum([
+      "not_found",
+      "invalid_request",
+      "llm_unavailable",
+      "llm_bad_output",
+      "calendar_unavailable",
+      "unauthorized",
+      "forbidden",
+      "too_many_attempts",
+    ]),
     message: z.string(),
   }),
 });

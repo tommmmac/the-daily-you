@@ -6,13 +6,13 @@ How The Daily You fits together. It covers what's built and what's planned, and 
 
 Phase 1: the Reporter and Copy Desk agents, the agent engine and router, chat with streaming, printing to Markdown, and a web app with chat, journal and entry pages.
 
-From Phase 2: pages (each printed chat adds a page to the day), editing a page through the Copy Desk (the Edit button on each page), deleting pages and entries, and undo through saved versions. From Phase 3: a facts file the Reporter reads every chat, the Archivist, which updates it and keeps a list of things to follow up on after each print, and recall of related past days while you chat. From Phase 4: your calendars' events in the Reporter's context and in each entry. Everything runs on Ollama. Plain files are the source of truth, with a SQLite index for recall that can always be rebuilt. There are no cloud models, PWA or auth yet.
+From Phase 2: pages (each printed chat adds a page to the day), editing a page through the Copy Desk (the Edit button on each page), deleting pages and entries, and undo through saved versions. From Phase 3: a facts file the Reporter reads every chat, the Archivist, which updates it and keeps a list of things to follow up on after each print, and recall of related past days while you chat. From Phase 4: your calendars' events in the Reporter's context and in each entry. From Phase 5: the server serves the built app, which installs as a PWA on the computer and on phones, phones sign in with a passphrase through Tailscale, and a nightly push reminder. Everything runs on Ollama. Plain files are the source of truth, with a SQLite index for recall that can always be rebuilt. There are no cloud models yet.
 
 ## Big picture
 
 ```
  ┌──────────────────────────┐
- │  Desktop browser         │   phone via Tailscale + PWA: Phase 5
+ │  Browser or installed app│   phones through tailscale serve
  │  React app (apps/web)    │
  └────────────┬─────────────┘
               │ fetch + SSE (/api/*)
@@ -37,7 +37,7 @@ From Phase 2: pages (each printed chat adds a page to the day), editing a page t
  └───────────────────────────────────────────────────────────┘
 ```
 
-A single Bun process serves the API. Serving the built frontend from the same process is planned but not wired up yet; in dev, Vite serves the frontend and forwards `/api` to the server.
+A single Bun process serves the API and, once `bun run build` has made `apps/web/dist`, the app itself (`web.ts`): files from the build, and `index.html` for any other path so React Router can handle `/journal/2026-10-03`. Files under `assets/` have hashes in their names, so they're cached for good, and everything else is checked each time. In dev, Vite serves the frontend and forwards `/api` to the server.
 
 ## Repo layout
 
@@ -87,7 +87,10 @@ apps/server/src/
 ├── schemas/              # structured outputs agents can return (`story`)
 ├── newsroom/             # workflows that use agents, e.g. print.ts
 ├── morgue/               # memory: the recall index, recall and patterns
-└── calendar/             # reading ICS links: ics.ts (parsing), feeds.ts (fetching and caching)
+├── calendar/             # reading ICS links: ics.ts (parsing), feeds.ts (fetching and caching)
+├── auth.ts               # who's local, passphrase and sessions (data/auth.json)
+├── push.ts               # the nightly reminder (data/push.json)
+└── web.ts                # serves the built app
 ```
 
 - **Personas, capabilities, workflows.** Agents are *who* (a prompt and settings). `tools/` and `schemas/` are *what they can do*, shared by name. `newsroom/` is *when things happen*: code that calls agents, like printing.
@@ -213,10 +216,12 @@ data/
 ├── transcripts/
 │   └── 2026-09-29/
 │       └── <session-id>.json       # raw chat, kept for re-printing
+├── settings.json                   # everything on the Settings page
+├── auth.json                       # passphrase hash and signed-in devices (hashed)
+├── push.json                       # reminder keys and each device's subscription
 │
 │   planned:
-├── media/                          # photos (Phase 6)
-└── settings.json                   # name, paper name, dateline, day cutoff, models
+└── media/                          # photos (Phase 7)
 ```
 
 - **Entry format:** see [ENTRY_FORMAT.md](ENTRY_FORMAT.md).
@@ -256,11 +261,14 @@ Printing a chat that's already a page rewrites only that page. A new chat adds a
 - **The Reporter** gets the day's events as `{{events}}`, with times worked out in code ("10:00 am to 12:00 pm: FIT2004 Lecture, at Clayton [Uni]"). Anything that hasn't started yet is marked, so it's asked about as a plan. It's told the calendar is what was planned, not what happened.
 - **On print**, the day's events are written to the entry's `events` frontmatter. If a calendar can't be read right then, the events saved before are kept.
 
-## Security & access (Phase 5)
+## App, phones and sign-in (Phase 5, built)
 
-- By default, bind to `127.0.0.1`. For phone access, use Tailscale (`tailscale serve` gives HTTPS on the tailnet), which the PWA and push notifications need.
-- Simple single-user auth: a passphrase set on first run, stored as a hash, with a long-lived session cookie. This is a backstop, since Tailscale already limits who can reach the server.
-- API keys for cloud models live in `data/settings.json` or `.env` and are never sent to the frontend.
+- **The app:** `vite-plugin-pwa` adds a manifest and a service worker, so Chrome and Edge offer to install it, and phones can add it to the home screen. The service worker caches the app itself, never `/api`, so diary data is always fresh. Settings has an Install button when the browser offers one (`lib/install.ts`).
+- **Starting with Windows:** `bun run autostart` (`scripts/autostart.ts`) puts a small VBScript in the Startup folder that runs `bun run build` and `bun run start` with no window, logging to `logs/server.log`.
+- **Phones** reach the computer through `tailscale serve`, which gives HTTPS on the tailnet (needed for the PWA and push) and proxies to `127.0.0.1:3000`. The server still only listens on localhost. Setup is in [PHONE.md](PHONE.md).
+- **Who's local** (`auth.ts`): a request from a loopback address, to localhost, with no forwarding headers, is the computer itself and is always let in. `tailscale serve` also connects from 127.0.0.1, but it always adds `X-Forwarded-For`, so anything with forwarding headers counts as another device. Headers can be added but not taken away, so a phone can't pass itself off as the computer.
+- **Signing in:** other devices need a session cookie (`dy_session`, HttpOnly, SameSite=Lax, a year). They get one by typing the passphrase, which is only set, changed or turned off from the computer. `data/auth.json` keeps the passphrase's hash (`Bun.password`, argon2id) and a SHA-256 of each session token, so the file alone can't sign anyone in. Changing the passphrase signs every device out. After 5 wrong tries in 15 minutes, logins wait, for everyone at once, since every phone comes through the same proxy.
+- **Reminder** (`push.ts`): Web Push with VAPID keys made on first use, in `data/push.json` with each device's subscription. Once a minute the server checks whether it's past the reminder time (and at most 3 hours past, so a computer that wakes up late doesn't send a stale one), whether it's been sent for that diary day, and whether there's an entry yet. The service worker (`public/push-sw.js`) shows it and opens the chat when it's tapped. Devices the push service says are gone are forgotten.
 
 ## Principles
 

@@ -24,7 +24,7 @@ export function StatusDot() {
     status.kind === "loading"
       ? ["bg-muted-foreground", "Checking…", ""]
       : status.kind === "server-down"
-        ? ["bg-red-500", "Server offline", "Can't reach the server. Is `bun run dev` running?"]
+        ? ["bg-red-500", "Server offline", "Can't reach the server. Is it running on your computer?"]
         : status.health.ollama.up
           ? ["bg-green-500", "Presses running", status.health.ollama.models.join(", ")]
           : ["bg-amber-500", "Ollama offline", `Can't reach Ollama at ${status.health.ollama.host}`];

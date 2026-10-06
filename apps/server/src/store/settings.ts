@@ -18,6 +18,7 @@ export function currentSettings(): Settings {
     language: config.language,
     pronouns: config.pronouns,
     calendars: config.calendars,
+    reminderTime: config.reminderTime,
     models: { reporter: config.models.reporter, copydesk: config.models.copydesk, router: config.models.router },
   };
 }

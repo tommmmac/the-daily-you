@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@daily-you/shared": "workspace:*",
-    "hono": "^4.13.12",
+    "hono": "^4.13.13",
     "ical.js": "^2.2.1",
     "web-push": "^3.6.7",
     "zod": "^4.6.5"
